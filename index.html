@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>防控隔离 - 可爱版</title>
+    <!-- 引入 ZCOOL KuaiLe (快乐体)，这是一款非常可爱的中文手写字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- 地图屏幕 -->
+        <div id="map-screen" class="hidden">
+            <div class="map-content">
+                <h1>🌍 World 1</h1>
+                <div class="level-nodes">
+                    <div class="level-node" data-level="0">
+                        <div class="node-circle">1</div>
+                        <div class="node-stars"></div>
+                    </div>
+                    <div class="level-node" data-level="1">
+                        <div class="node-circle">2</div>
+                        <div class="node-stars"></div>
+                    </div>
+                    <div class="level-node" data-level="2">
+                        <div class="node-circle">3</div>
+                        <div class="node-stars"></div>
+                    </div>
+                    <div class="level-node" data-level="3">
+                        <div class="node-circle">4</div>
+                        <div class="node-stars"></div>
+                    </div>
+                    <div class="level-node" data-level="4">
+                        <div class="node-circle">5</div>
+                        <div class="node-stars"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏开始/新手指引界面 -->
+        <div id="start-screen">
+            <div class="tutorial-card">
+                <div class="logo-area">🔬</div>
+                <h1>萌菌研究所</h1>
+                <p class="subtitle">实习研究员，欢迎入职！</p>
+                
+                <div class="rules-container">
+                    <div class="rule-item">
+                        <span class="icon">👆</span>
+                        <div class="text">
+                            <h3>点击消除</h3>
+                            <p>点击果冻病毒来收集数据</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <span class="icon">🧪</span>
+                        <div class="text">
+                            <h3>充满治愈条</h3>
+                            <p>顶部进度条满 <span class="highlight">100%</span> 即可过关</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <span class="icon">⚠️</span>
+                        <div class="text">
+                            <h3>小心感染</h3>
+                            <p>底部感染条满了就会 <span class="danger">任务失败</span></p>
+                        </div>
+                    </div>
+                </div>
+                <button id="start-btn">开始实验</button>
+            </div>
+        </div>
+
+        <!-- Header 区域 (15vh) -->
+        <div id="ui-header">
+            <div class="header-left">
+                <span id="level-display-header">Level 1</span> / <span id="total-levels-header">5</span>
+            </div>
+            <div class="header-center">
+                <h1 id="game-title">防控隔离</h1>
+            </div>
+            <div class="progress-box">
+                <div class="progress-label">疫苗研发进度</div>
+                <div class="progress-bar-wrapper">
+                    <div id="cure-bar-header" class="progress-bar cure"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏画布 -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- 技能区 (右下角，默认隐藏) -->
+        <div id="skill-container" class="hidden">
+            <!-- 这是一个 MOBA 风格的技能按钮 -->
+            <div id="active-skill-btn" class="skill-btn locked">
+                <div class="skill-icon">❄️</div>
+                <div class="cooldown-overlay">
+                    <span class="cd-number"></span>
+                </div>
+                <div class="key-hint">极寒</div>
+            </div>
+        </div>
+
+        <!-- Footer 区域 (10vh) -->
+        <div id="ui-footer">
+            <div class="progress-box">
+                <div class="progress-label">免疫系统负荷</div>
+                <div class="progress-bar-wrapper">
+                    <div id="infection-bar-footer" class="progress-bar infection"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结束弹窗 -->
+        <div id="game-over" class="hidden">
+            <div class="modal-content">
+                <h2>防守失败!</h2>
+                <p>小病毒们把这里占领了...</p>
+                <button onclick="location.reload()">重新开始</button>
+            </div>
+        </div>
+        
+        <!-- 关卡胜利弹窗 (绿色系) -->
+        <div id="level-complete" class="hidden">
+            <div class="modal-content">
+                <h2>🌟 关卡完成! 🌟</h2>
+                <p>小病毒都被消灭啦！</p>
+                <div class="score-summary">
+                    治愈率: <span class="highlight">100%</span>
+                </div>
+                <button id="next-level-btn">前往下一关 ➔</button>
+            </div>
+        </div>
+        
+        <!-- 胜利弹窗 -->
+        <div id="game-win" class="hidden">
+            <div class="modal-content">
+                <h2>防守成功!</h2>
+                <p>成功清除所有危险病毒!</p>
+                <button onclick="location.reload()">下一关</button>
+            </div>
+        </div>
+
+        <!-- 图鉴弹窗 -->
+        <div id="intro-modal" class="modal-overlay hidden">
+            <div class="intro-card">
+                <div class="card-header">
+                    <span>🔬 病毒图鉴</span>
+                    <span class="badge">NEW</span>
+                </div>
+                
+                <!-- 动态预览区 -->
+                <div class="canvas-wrapper">
+                    <canvas id="intro-canvas" width="120" height="120"></canvas>
+                </div>
+                
+                <h2 id="intro-name">病毒名称</h2>
+                <p id="intro-desc">病毒描述文案...</p>
+                
+                <!-- 机制教学 -->
+                <div class="tutorial-box">
+                    <div class="icon-ring">⭕</div>
+                    <div class="text">
+                        <strong id="intro-tip-title">这是繁殖计时!</strong><br>
+                        <span id="intro-tip">圈圈跑完前消灭它，否则会分裂！</span>
+                    </div>
+                </div>
+                
+                <button id="intro-start-btn">开始净化</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./game.js"></script>
+</body>
+</html>
