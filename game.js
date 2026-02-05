@@ -11,8 +11,11 @@ const game = {
     level: 1,
     score: 0,
     lastSpawnTime: 0,
-    spawnInterval: 2000, // ms
+    spawnInterval: 2000, // milliseconds
     virusGrowthRate: 1.05, // exponential growth multiplier
+    virusesPerLevel: 20, // viruses required to complete each level
+    minSpawnInterval: 1000, // minimum spawn interval in milliseconds
+    spawnIntervalDecrease: 100, // spawn interval decrease per level in milliseconds
     upgrades: {
         clickPower: 1,
         dnaBoost: 1,
@@ -256,7 +259,7 @@ function update(deltaTime) {
     }
 
     // Check level completion
-    if (game.virusesEliminated >= game.level * 20 && game.viruses.length === 0) {
+    if (game.virusesEliminated >= game.level * game.virusesPerLevel && game.viruses.length === 0) {
         levelUp();
     }
 
@@ -425,7 +428,7 @@ function useVaccine() {
 function levelUp() {
     game.level++;
     game.virusesEliminated = 0;
-    game.spawnInterval = Math.max(1000, game.spawnInterval - 100);
+    game.spawnInterval = Math.max(game.minSpawnInterval, game.spawnInterval - game.spawnIntervalDecrease);
     
     // Show level up message
     const ctx = game.ctx;
@@ -464,10 +467,10 @@ function gameOver(victory) {
 
     if (victory) {
         title.textContent = '🎉 胜利！🎉';
-        message.textContent = `你成功研发出疫苗并拯救了世界！\n关卡: ${game.level}\n消灭病毒: ${game.virusesEliminated}\n收集DNA: ${Math.floor(game.dna)}`;
+        message.innerHTML = `你成功研发出疫苗并拯救了世界！<br>关卡: ${game.level}<br>消灭病毒: ${game.virusesEliminated}<br>收集DNA: ${Math.floor(game.dna)}`;
     } else {
         title.textContent = '💀 游戏结束 💀';
-        message.textContent = `病毒数量超载！世界被吞噬...\n关卡: ${game.level}\n消灭病毒: ${game.virusesEliminated}\n收集DNA: ${Math.floor(game.dna)}`;
+        message.innerHTML = `病毒数量超载！世界被吞噬...<br>关卡: ${game.level}<br>消灭病毒: ${game.virusesEliminated}<br>收集DNA: ${Math.floor(game.dna)}`;
     }
 
     modal.classList.add('active');
