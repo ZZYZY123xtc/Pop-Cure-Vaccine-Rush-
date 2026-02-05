@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>萌菌大作战 - Pop Cure Vaccine Rush</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>🦠 萌菌大作战 🦠</h1>
+            <p class="subtitle">Don't fight them. Cure them.</p>
+        </header>
+        
+        <div class="info-panel">
+            <div class="stat">
+                <span class="stat-label">🧬 DNA:</span>
+                <span id="dna-count" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">💉 疫苗进度:</span>
+                <span id="vaccine-progress" class="stat-value">0%</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">🗺️ 关卡:</span>
+                <span id="level" class="stat-value">1</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">🦠 病毒数:</span>
+                <span id="virus-count" class="stat-value">0</span>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div class="control-panel">
+            <button id="start-btn" class="btn btn-primary">开始游戏</button>
+            <button id="pause-btn" class="btn btn-secondary" disabled>暂停</button>
+            <button id="vaccine-btn" class="btn btn-vaccine" disabled>使用疫苗 (需要100 DNA)</button>
+        </div>
+
+        <div class="upgrade-panel" id="upgrade-panel">
+            <h3>技能升级 (Roguelike)</h3>
+            <div class="upgrades">
+                <button class="upgrade-btn" data-upgrade="click-power">
+                    <span class="upgrade-name">💪 点击威力</span>
+                    <span class="upgrade-cost">消耗: 10 DNA</span>
+                </button>
+                <button class="upgrade-btn" data-upgrade="dna-boost">
+                    <span class="upgrade-name">🧬 DNA加成</span>
+                    <span class="upgrade-cost">消耗: 15 DNA</span>
+                </button>
+                <button class="upgrade-btn" data-upgrade="slow-growth">
+                    <span class="upgrade-name">⏰ 减缓增殖</span>
+                    <span class="upgrade-cost">消耗: 20 DNA</span>
+                </button>
+                <button class="upgrade-btn" data-upgrade="auto-damage">
+                    <span class="upgrade-name">⚡ 自动伤害</span>
+                    <span class="upgrade-cost">消耗: 25 DNA</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="modal" id="game-over-modal">
+            <div class="modal-content">
+                <h2 id="modal-title">游戏结束</h2>
+                <p id="modal-message"></p>
+                <button id="restart-btn" class="btn btn-primary">重新开始</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
