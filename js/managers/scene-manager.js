@@ -22,7 +22,6 @@ export class SceneManager {
             // 🔥 开发模式：每次刷新页面时重置体力到满
             this.playerState.energy = this.playerState.maxEnergy;
             this.playerState.lastRecoveryTime = Date.now();
-            console.log('[SceneManager] 开发模式：体力已重置为', this.playerState.energy);
             console.log('[SceneManager] PlayerState loaded');
 
             // 获取 DOM 元素
@@ -51,6 +50,10 @@ export class SceneManager {
                 (levelId) => this.onNodeClick(levelId)
             );
             console.log('[SceneManager] MapRenderer created');
+
+            // 🌸 设置初始章节（根据当前最高关卡）
+            this.updateMapChapter();
+            console.log('[SceneManager] Initial chapter set');
 
             // 更新体力条显示
             this.updateEnergyDisplay();
@@ -166,8 +169,26 @@ export class SceneManager {
         // 保存状态
         this.saveState();
 
+        // 🌸 检查是否需要切换章节
+        this.updateMapChapter();
+
         // 返回地图
         this.backToMap();
+    }
+
+    /**
+     * 🌸 根据当前最高关卡，自动更新地图章节
+     */
+    updateMapChapter() {
+        // 找到玩家当前最高关卡对应的章节
+        const currentLevel = LEVELS.find(lvl => lvl.id === this.playerState.maxLevel);
+        if (currentLevel && this.mapRenderer) {
+            const targetChapter = currentLevel.chapter;
+            if (this.mapRenderer.currentChapter !== targetChapter) {
+                console.log(`[章节切换] 从第${this.mapRenderer.currentChapter}章切换到第${targetChapter}章`);
+                this.mapRenderer.setChapter(targetChapter);
+            }
+        }
     }
 
     /**
@@ -175,9 +196,9 @@ export class SceneManager {
      * 体力已扣，不再退款
      */
     onLevelFail(levelId) {
-        // 简单起见，直接回到地图
-        // 如果需要重试，可以不扣体力，让玩家自己决定是否再来
-        this.backToMap();
+        console.log(`[关卡失败] 关卡 ${levelId} 失败，等待用户操作...`);
+        // 不立即跳转，等待用户在失败弹窗中点击按钮
+        // 失败弹窗的按钮会触发 'backToMapRequested' 事件
     }
 
     /**

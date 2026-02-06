@@ -37,7 +37,7 @@ export class TutorialManager {
         const tutorialOverlay = document.getElementById('tutorial-overlay');
         if (tutorialOverlay) {
             // 🔥 恢复游戏状态（教程期间游戏应该暂停但不是 LEVEL_OVER）
-            import('./game-manager.js').then(({gameManager, GAME_STATE}) => {
+            import('../core/game-manager.js').then(({gameManager, GAME_STATE}) => {
                 console.log('[Tutorial] 设置游戏状态为 LEVEL_OVER （暂停）');
                 gameManager.gameState = GAME_STATE.LEVEL_OVER;
             });
@@ -67,7 +67,7 @@ export class TutorialManager {
             console.log('[Tutorial] 使用 modals.showTutorialAt 方法定位病毒');
             
             // 动态导入 modals（避免循环依赖）
-            import('./modals-ui.js').then(({modals}) => {
+            import('../ui/modals-ui.js').then(({modals}) => {
                 modals.showTutorialAt(this.tutorialVirus, stepConfig, () => {
                     this.nextGuide();
                 });

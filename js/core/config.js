@@ -23,33 +23,33 @@ export const CONFIG = {
     },
 
     VIRUS_TYPES: {
-        // Type A: 草莓冠状糖 - 基础兵
+        // Type A: 草莓冠状糖 - 基础兵 (Basic)
         A: {
             color: '#FF9AA2', 
             radius: 16, 
-            speed: 1.8,  
+            speed: 1.5,  // 标准化速度：基础型
             hp: 1, 
-            splitTime: 3500, // 5s -> 3.5s (大幅缩短，不再发呆)
+            splitTime: 3500,
             splitCount: 2,
             cureValue: 1  // 治愈贡献值：最基础
         },
-        // Type B: 蓝莓厚壁菌 - 肉盾
+        // Type B: 蓝莓厚壁菌 - 肉盾 (Split)
         B: {
             color: '#B5EAD7', 
             radius: 24, // 更大，六边形
-            speed: 0.6, 
+            speed: 1.0,  // 标准化速度：缓慢型
             hp: 2, 
             splitTime: 6000, 
             splitCount: 2,
             cureValue: 2  // 治愈贡献值：需要点两次，奖励2倍
         },
-        // Type C: 柠檬三角 - 极速
+        // Type C: 柠檬三角 - 极速 (Fast)
         C: {
             color: '#FFDAC1', 
-            radius: 20,        // 从14增加到20，方便点击
-            speed: 4.0,        // 很快
+            radius: 20,
+            speed: 2.8,  // 标准化速度：快速型（从4.0降低）
             hp: 1, 
-            splitTime: 1800,   // 1.8s (超级快)
+            splitTime: 1800,
             splitCount: 2,
             cureValue: 3  // 治愈贡献值：速度极快最难抓，奖励3倍
         }

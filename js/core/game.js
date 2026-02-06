@@ -55,6 +55,30 @@ function loadLevel(index) {
     }
     console.log('[GAME] 关卡加载成功:', level.id);
     
+    // 🔥 根据当前关卡重置技能可用性（防止 localStorage 中的旧数据干扰）
+    // 规则：
+    // - Lv1-3：无技能
+    // - Lv4+：有冰冻
+    // - Lv5+：有冰冻 + 闪电
+    console.log('[GAME] 根据关卡 ID 更新技能可用性...');
+    const currentLevelId = level.id;
+    if (currentLevelId <= 3) {
+        // Lv1-3 没有技能，清除已解锁的技能
+        skillManager.reset();
+        console.log('[GAME] Lv1-3 阶段，无技能可用');
+    } else if (currentLevelId === 4) {
+        // Lv4 只有冰冻
+        skillManager.reset();
+        skillManager.unlock('freeze');
+        console.log('[GAME] Lv4 阶段，已解锁冰冻');
+    } else if (currentLevelId >= 5) {
+        // Lv5+ 有冰冻 + 闪电
+        skillManager.reset();
+        skillManager.unlock('freeze');
+        skillManager.unlock('lightning');
+        console.log('[GAME] Lv5+ 阶段，已解锁冰冻 + 闪电');
+    }
+    
     // 清空粒子
     effectsManager.clearParticles();
     
@@ -240,6 +264,17 @@ export function init() {
                 freezeCooldown = FREEZE_COOLDOWN_MAX;
                 uiManager.activeSkillBtn.classList.add('cooldown');
             }
+        });
+    }
+
+    // 失败弹窗"返回地图"按钮事件
+    const gameOverBackBtn = document.getElementById('game-over-back-btn');
+    if (gameOverBackBtn) {
+        gameOverBackBtn.addEventListener('click', () => {
+            console.log('[GAME] 点击"返回地图"按钮');
+            uiManager.hideAllModals();
+            // 触发返回地图事件
+            window.dispatchEvent(new CustomEvent('backToMapRequested'));
         });
     }
 
