@@ -5,7 +5,7 @@ export const CONFIG = {
     
     // 初始生成速度
     SPAWN_INTERVAL: 1200,              // 1.2秒生成一个病毒
-    INITIAL_SPAWN_COUNT: 0,            // 开局不生成病毒，让玩家看到空荡荡的屏幕
+    INITIAL_SPAWN_COUNT: 3,            // 开局生成 3 个病毒
 
     // 难度曲线
     DIFFICULTY: {
@@ -41,7 +41,7 @@ export const CONFIG = {
             hp: 2, 
             splitTime: 6000, 
             splitCount: 2,
-            cureValue: 3  // 治愈贡献值：需要点两次，奖励3倍
+            cureValue: 2  // 治愈贡献值：需要点两次，奖励2倍
         },
         // Type C: 柠檬三角 - 极速
         C: {
@@ -51,7 +51,7 @@ export const CONFIG = {
             hp: 1, 
             splitTime: 1800,   // 1.8s (超级快)
             splitCount: 2,
-            cureValue: 2  // 治愈贡献值：速度快难点击，奖励2個
+            cureValue: 3  // 治愈贡献值：速度极快最难抓，奖励3倍
         }
     }
 };

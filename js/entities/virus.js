@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from '../core/config.js';
 
 export class Virus {
     constructor(x, y, typeKey) {
@@ -284,9 +284,20 @@ export class Virus {
         ctx.translate(this.x, this.y); 
         
         const percent = Math.max(0, this.splitTimer / this.maxSplitTime);
-        ctx.strokeStyle = this.props.color;
+        
+        // 临界闪烁效果：如果正在闪烁，改变圈圈颜色
+        let timerColor = this.props.color;
+        let timerAlpha = 0.4;
+        
+        if (this.nearSplitFlash && this.nearSplitFlash > 0) {
+            // 闪烁时变成粉红色，透明度也变化
+            timerColor = '#FF69B4';
+            timerAlpha = 0.6 + Math.sin((300 - this.nearSplitFlash) * 0.02) * 0.4;
+        }
+        
+        ctx.strokeStyle = timerColor;
         ctx.lineWidth = 4;
-        ctx.globalAlpha = 0.4;
+        ctx.globalAlpha = timerAlpha;
         ctx.beginPath();
         // 半径稍微大一点包住那些突触
         const ringRadius = this.typeKey === 'A' ? this.radius + 8 : this.radius + 6;

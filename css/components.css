@@ -1,0 +1,169 @@
+/* components.css - UI 组件、技能、进度条等 */
+
+/* 被动技能显示 */
+#passive-skill-area {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+}
+
+#passive-skill-area.hidden {
+    display: none;
+}
+
+.combo-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #FFE66D 0%, #FFC93C 100%);
+    padding: 6px 12px;
+    border-radius: 20px;
+    box-shadow: 0 3px 10px rgba(255, 230, 109, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.lightning-icon {
+    font-size: 20px;
+    animation: rotate 3s linear infinite;
+}
+
+.combo-text {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+#combo-count {
+    font-size: 18px;
+    color: #FF6B6B;
+    text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+}
+
+/* 技能区定位 */
+#skill-container {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    z-index: 50;
+}
+
+#skill-container.hidden {
+    display: none;
+}
+
+.skill-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border: 3px solid #fff;
+    box-shadow: 0 5px 15px rgba(0, 198, 251, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.1s;
+}
+
+.skill-btn:active { 
+    transform: scale(0.95); 
+}
+
+.skill-btn.locked {
+    filter: grayscale(100%);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.skill-icon { 
+    font-size: 32px; 
+}
+
+.key-hint {
+    position: absolute;
+    bottom: -25px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.cooldown-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    transition: height 0.1s linear;
+    overflow: hidden;
+}
+
+.cooldown-overlay .cd-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.skill-btn.cooldown {
+    filter: grayscale(50%);
+    pointer-events: none;
+}
+
+.skill-btn.cooldown .cooldown-overlay {
+    height: 100%;
+}
+
+/* HUD 面板 */
+.hud-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(5px);
+    padding: 10px 30px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    border: 3px solid #fff;
+}
+
+.level-indicator {
+    font-size: 14px;
+    color: #FF9AA2;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* 徽章 */
+.badge {
+    background: #FF6B6B;
+    color: white;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* 状态颜色 */
+.warning { 
+    color: #FF6B6B !important; 
+    transform: scale(1.1); 
+    transition: all 0.3s; 
+}
+
+.safe { 
+    color: #B5EAD7; 
+}

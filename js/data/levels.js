@@ -2,12 +2,13 @@ export const LEVELS = [
     {
         id: 1,
         description: "Level 1: 初次接触",
-        goal: 15,
+        goal: 6,  // 进一步降低目标，让第一关成为真正的新手练手关卡
         threshold: 30,
         spawnInterval: 2000,
         availableTypes: ['A'],
         difficulty: 1.0,
-        intro: 'A'  // 首次出现病毒 A
+        intro: 'A',  // 首次出现病毒 A
+        mapConfig: { x: 0.5, y: 0.05, icon: 'level' }  // 地图坐标：入口
     },
     {
         id: 2,
@@ -17,7 +18,8 @@ export const LEVELS = [
         spawnInterval: 1600,
         availableTypes: ['A', 'B'],
         difficulty: 1.2,
-        intro: 'B'  // 首次出现病毒 B
+        intro: 'B',  // 首次出现病毒 B
+        mapConfig: { x: 0.3, y: 0.15, icon: 'level' }  // 地图坐标：左弯
     },
     {
         id: 3,
@@ -27,7 +29,9 @@ export const LEVELS = [
         spawnInterval: 1200,
         availableTypes: ['A', 'B', 'C'],
         difficulty: 1.4,
-        intro: 'C'  // 首次出现病毒 C
+        intro: 'C',  // 首次出现病毒 C
+        reward: 'freeze',  // 🎁 解锁冰冻技能
+        mapConfig: { x: 0.7, y: 0.25, icon: 'chest' }  // 地图坐标：右弯，宝箱
     },
     {
         id: 4,
@@ -36,7 +40,10 @@ export const LEVELS = [
         threshold: 100,
         spawnInterval: 900,
         availableTypes: ['A', 'B', 'C'],
-        difficulty: 1.6
+        difficulty: 1.6,
+        skillIntro: 'freeze',  // 在这关展示冷冻技能的使用教学
+        reward: 'lightning',  // ⚡ 解锁闪电连击
+        mapConfig: { x: 0.4, y: 0.35, icon: 'level' }  // 地图坐标：回中
     },
     {
         id: 5,
@@ -45,7 +52,9 @@ export const LEVELS = [
         threshold: 120,
         spawnInterval: 600,
         availableTypes: ['A', 'B', 'C'],
-        difficulty: 2.0
+        difficulty: 2.0,
+        skillIntro: 'lightning',  // 在这关展示闪电技能的使用教学
+        mapConfig: { x: 0.5, y: 0.45, icon: 'boss' }  // 地图坐标：Boss战
     }
 ];
 

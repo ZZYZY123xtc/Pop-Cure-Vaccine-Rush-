@@ -1,0 +1,88 @@
+/* base.css - 全局基础样式 */
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #FFF9F0; 
+    color: #555;
+    font-family: 'ZCOOL KuaiLe', 'Yuanti SC', 'YouYuan', cursive, sans-serif;
+    height: 100vh;
+    user-select: none;
+}
+
+#game-layer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+canvas {
+    display: block;
+    background-color: transparent; 
+    width: 100%;
+    height: 75vh;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#intro-canvas {
+    width: 120px !important;
+    height: 120px !important;
+    display: block;
+}
+
+.hidden { display: none !important; }
+
+/* 动画定义 */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes bounceIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes skillPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5)); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)); }
+}
+
+@keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bubbleBounce {
+    from { transform: scale(0.3) translateY(-20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes storyFadeIn {
+    from { opacity: 0; transform: translateY(50px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes avatarPulse {
+    0%, 100% { 
+        transform: scale(1); 
+        filter: drop-shadow(0 0 10px rgba(255, 154, 162, 0.5));
+    }
+    50% { 
+        transform: scale(1.1); 
+        filter: drop-shadow(0 0 20px rgba(255, 154, 162, 0.8));
+    }
+}

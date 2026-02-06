@@ -1,0 +1,66 @@
+/* --- 地图层容器 --- */
+#map-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #FFEBEE; /* 兜底背景色：极浅粉 */
+    z-index: 100; /* 默认低优先级，不挡住任何界面 */
+    overflow: hidden; /* 禁止滚动条，内容由 Canvas 绘制 */
+    display: none; /* 👈 默认隐藏！让路给开始界面 */
+}
+
+/* 🎯 显示状态：点击开始按钮后才激活 */
+#map-layer.active {
+    display: block !important;
+    z-index: 6000; /* 显示时提升到最高层 */
+}
+
+/* --- 全屏画布 --- */
+#map-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* --- 顶部体力条 (悬浮胶囊样式) --- */
+#energy-bar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 16px;
+    border-radius: 50px; /* 胶囊圆角 */
+    box-shadow: 0 4px 15px rgba(255, 64, 129, 0.2); /* 柔和的粉色投影 */
+    
+    font-family: "Arial Rounded MT Bold", "Varela Round", sans-serif; /* 圆体字 */
+    font-weight: bold;
+    color: #FF4081; /* 糖果粉字 */
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none; /* 让点击穿透，不挡操作 */
+}
+
+/* --- ⚡ 图标动画 --- */
+#energy-bar span.icon {
+    font-size: 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* --- 关卡详情弹窗 (可选) --- */
+.level-popup {
+    background: #FFF;
+    border-radius: 20px;
+    border: 4px solid #B2EBF2; /* 浅蓝边框 */
+    color: #555;
+    /* 具体布局由 JS 动态生成，这里只定基调 */
+}

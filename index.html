@@ -9,67 +9,69 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <!-- 地图屏幕 -->
-        <div id="map-screen" class="hidden">
-            <div class="map-content">
-                <h1>🌍 World 1</h1>
-                <div class="level-nodes">
-                    <div class="level-node" data-level="0">
-                        <div class="node-circle">1</div>
-                        <div class="node-stars"></div>
+    <!-- 🎯 开始界面 - 移到最外层，确保不被遮挡 -->
+    <div id="start-screen" style="display: flex; z-index: 10000; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #FFF9F0; opacity: 1;">
+        <div class="tutorial-card">
+            <div class="logo-area">🔬</div>
+            <h1>萌菌研究所</h1>
+            <p class="subtitle">实习研究员，欢迎入职！</p>
+            
+            <div class="rules-container">
+                <div class="rule-item">
+                    <span class="icon">👆</span>
+                    <div class="text">
+                        <h3>点击消除</h3>
+                        <p>点击果冻病毒来收集数据</p>
                     </div>
-                    <div class="level-node" data-level="1">
-                        <div class="node-circle">2</div>
-                        <div class="node-stars"></div>
+                </div>
+                <div class="rule-item">
+                    <span class="icon">🧪</span>
+                    <div class="text">
+                        <h3>充满治愈条</h3>
+                        <p>顶部进度条满 <span class="highlight">100%</span> 即可过关</p>
                     </div>
-                    <div class="level-node" data-level="2">
-                        <div class="node-circle">3</div>
-                        <div class="node-stars"></div>
-                    </div>
-                    <div class="level-node" data-level="3">
-                        <div class="node-circle">4</div>
-                        <div class="node-stars"></div>
-                    </div>
-                    <div class="level-node" data-level="4">
-                        <div class="node-circle">5</div>
-                        <div class="node-stars"></div>
+                </div>
+                <div class="rule-item">
+                    <span class="icon">⚠️</span>
+                    <div class="text">
+                        <h3>小心感染</h3>
+                        <p>底部感染条满了就会 <span class="danger">任务失败</span></p>
                     </div>
                 </div>
             </div>
+            <button id="start-btn">开始实验</button>
         </div>
+    </div>
 
-        <!-- 游戏开始/新手指引界面 -->
-        <div id="start-screen">
-            <div class="tutorial-card">
-                <div class="logo-area">🔬</div>
-                <h1>萌菌研究所</h1>
-                <p class="subtitle">实习研究员，欢迎入职！</p>
-                
-                <div class="rules-container">
-                    <div class="rule-item">
-                        <span class="icon">👆</span>
-                        <div class="text">
-                            <h3>点击消除</h3>
-                            <p>点击果冻病毒来收集数据</p>
-                        </div>
-                    </div>
-                    <div class="rule-item">
-                        <span class="icon">🧪</span>
-                        <div class="text">
-                            <h3>充满治愈条</h3>
-                            <p>顶部进度条满 <span class="highlight">100%</span> 即可过关</p>
-                        </div>
-                    </div>
-                    <div class="rule-item">
-                        <span class="icon">⚠️</span>
-                        <div class="text">
-                            <h3>小心感染</h3>
-                            <p>底部感染条满了就会 <span class="danger">任务失败</span></p>
-                        </div>
-                    </div>
+    <!-- 地图场景 (初始隐藏，动画后显示) -->
+    <div id="map-layer" style="display:none">
+        <canvas id="map-canvas"></canvas>
+        <div id="energy-bar">
+            <span class="icon">⚡</span>
+            <span id="energy-text">30/30</span>
+        </div>
+    </div>
+
+    <!-- 游戏场景容器 (包含开始屏幕和战斗UI) -->
+    <div id="game-layer">
+        <div id="game-container">
+        <!-- 开场剧情动画（生物扫描仪风格） -->
+        <div id="story-screen" class="hidden">
+            <!-- 动态背景 Canvas -->
+            <canvas id="story-canvas"></canvas>
+            
+            <!-- 浮动对话框 -->
+            <div class="story-dialog">
+                <div class="story-header">
+                    <div class="story-avatar">🤖</div>
+                    <h2 id="story-title">系统启动中...</h2>
                 </div>
-                <button id="start-btn">开始实验</button>
+                <div class="story-text-box">
+                    <div id="story-text" class="story-text"></div>
+                </div>
+                <div class="story-controls">
+                    <button id="story-next-btn" class="story-btn next">继续 ▶</button>
+                </div>
             </div>
         </div>
 
@@ -77,11 +79,18 @@
         <div id="ui-header">
             <div class="header-left">
                 <span id="level-display-header">Level 1</span> / <span id="total-levels-header">5</span>
+                <!-- 被动技能显示区域 -->
+                <div id="passive-skill-area" class="hidden">
+                    <div class="combo-display">
+                        <span class="lightning-icon">⚡</span>
+                        <span class="combo-text">Combo: <span id="combo-count">0</span></span>
+                    </div>
+                </div>
             </div>
             <div class="header-center">
                 <h1 id="game-title">防控隔离</h1>
             </div>
-            <div class="progress-box">
+            <div class="progress-box" id="vaccine-progress">
                 <div class="progress-label">疫苗研发进度</div>
                 <div class="progress-bar-wrapper">
                     <div id="cure-bar-header" class="progress-bar cure"></div>
@@ -95,7 +104,7 @@
         <!-- 技能区 (右下角，默认隐藏) -->
         <div id="skill-container" class="hidden">
             <!-- 这是一个 MOBA 风格的技能按钮 -->
-            <div id="active-skill-btn" class="skill-btn locked">
+            <div id="active-skill-btn" class="skill-btn locked hidden">
                 <div class="skill-icon">❄️</div>
                 <div class="cooldown-overlay">
                     <span class="cd-number"></span>
@@ -144,11 +153,11 @@
             </div>
         </div>
 
-        <!-- 图鉴弹窗 -->
+        <!-- 图鉴弹窗 (Enhanced) -->
         <div id="intro-modal" class="modal-overlay hidden">
             <div class="intro-card">
                 <div class="card-header">
-                    <span>🔬 病毒图鉴</span>
+                    <span>🔬 机密档案</span>
                     <span class="badge">NEW</span>
                 </div>
                 
@@ -160,20 +169,163 @@
                 <h2 id="intro-name">病毒名称</h2>
                 <p id="intro-desc">病毒描述文案...</p>
                 
+                <!-- 数据面板 -->
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-label">生命值</span>
+                        <div id="intro-hp" class="hp-display">❤️</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">危险度</span>
+                        <div id="intro-danger" class="danger-stars">⭐</div>
+                    </div>
+                </div>
+                
+                <!-- 弱点高亮 -->
+                <div class="weakness-box">
+                    <strong>🎯 弱点分析：</strong>
+                    <p id="intro-weakness" class="weakness-text">弱点描述...</p>
+                </div>
+                
                 <!-- 机制教学 -->
                 <div class="tutorial-box">
                     <div class="icon-ring">⭕</div>
                     <div class="text">
-                        <strong id="intro-tip-title">这是繁殖计时!</strong><br>
-                        <span id="intro-tip">圈圈跑完前消灭它，否则会分裂！</span>
+                        <strong>繁殖机制</strong><br>
+                        <span>圈圈跑完前消灭它，否则会分裂！</span>
                     </div>
                 </div>
                 
                 <button id="intro-start-btn">开始净化</button>
             </div>
         </div>
+
+        <!-- 技能解锁弹窗 -->
+        <div id="skill-unlock-modal" class="modal-overlay hidden">
+            <div class="skill-unlock-card">
+                <div class="unlock-header">
+                    <h2>🎉 新科技研发完成 🎉</h2>
+                </div>
+                
+                <!-- 技能图标 -->
+                <div class="skill-icon-large" id="unlock-skill-icon">🧊</div>
+                
+                <!-- 技能名称 -->
+                <h3 id="unlock-skill-name">极寒领域</h3>
+                
+                <!-- 技能参数面板 -->
+                <div class="skill-params">
+                    <div class="param-item">
+                        <span class="param-label">类型</span>
+                        <span id="unlock-skill-type" class="param-value">主动技</span>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-label">冷却</span>
+                        <span id="unlock-skill-cd" class="param-value">45秒</span>
+                    </div>
+                </div>
+                
+                <!-- 技能动画演示 -->
+                <div class="skill-demo-area">
+                    <canvas id="skill-demo-canvas" width="280" height="140"></canvas>
+                    <div class="demo-label">⚡ 技能演示</div>
+                </div>
+                
+                <!-- 技能描述 -->
+                <div class="skill-desc-box">
+                    <p id="unlock-skill-desc">点击右下角按钮，冻结全屏病毒 5 秒。停止移动和分裂。</p>
+                </div>
+                
+                <button id="equip-skill-btn">装备技能 ✓</button>
+            </div>
+        </div>
+
+        <!-- 教学引导气泡系统（内容由 JS 动态填充） -->
+        <div id="tutorial-overlay" class="hidden">
+            <!-- 步骤 1 -->
+            <div class="guide-bubble step-1 hidden" data-step="1">
+                <div class="bubble-content">
+                    <h3></h3>
+                    <p></p>
+                    <p class="tip"></p>
+                    <button class="next-guide-btn" onclick="nextGuide()">知道了 →</button>
+                </div>
+            </div>
+
+            <!-- 步骤 2 -->
+            <div class="guide-bubble step-2 hidden" data-step="2">
+                <div class="bubble-content">
+                    <h3></h3>
+                    <p></p>
+                    <p class="tip"></p>
+                    <button class="next-guide-btn" onclick="nextGuide()">明白了 →</button>
+                </div>
+            </div>
+
+            <!-- 步骤 3 -->
+            <div class="guide-bubble step-3 hidden" data-step="3">
+                <div class="bubble-content">
+                    <h3></h3>
+                    <p></p>
+                    <p class="tip"></p>
+                    <button class="next-guide-btn" onclick="nextGuide()">我记住了 →</button>
+                </div>
+            </div>
+
+            <!-- 步骤 4 -->
+            <div class="guide-bubble step-4 hidden" data-step="4">
+                <div class="bubble-content">
+                    <h3></h3>
+                    <p></p>
+                    <p class="tip"></p>
+                    <button class="next-guide-btn" onclick="endGuide()">开始游戏！</button>
+                </div>
+            </div>
+        </div>
+        </div>
     </div>
 
-    <script type="module" src="./game.js"></script>
+    <script type="module">
+        // 导入核心模块
+        import { startGame, init } from './js/core/game.js';
+        import { SceneManager } from './js/managers/scene-manager.js';
+
+        console.log('[INIT] 开始初始化游戏...');
+
+        // 初始化游戏（设置事件监听、UI 初始化）
+        // 这时还不应该初始化 SceneManager，因为我们先要显示开始屏幕
+        try {
+            init();
+            console.log('[INIT] 游戏壳初始化成功');
+        } catch (err) {
+            console.error('[INIT ERROR] 游戏初始化失败:', err);
+        }
+
+        // 全局监听地图场景事件（提前注册，避免时序问题）
+        window.addEventListener('sceneManagerEnterLevel', (e) => {
+            const { levelId } = e.detail;
+            console.log('[GAME] 收到进入关卡事件, levelId =', levelId);
+            startGame(levelId);
+        });
+
+        // 在开始按钮点击时，会先播放开场动画
+        // 动画完成后触发 startButtonClicked 事件，此时才初始化 SceneManager
+        let sceneManagerInitialized = false;
+
+        window.addEventListener('startButtonClicked', () => {
+            console.log('[EVENT] startButtonClicked 触发（开场动画已完成）');
+            if (!sceneManagerInitialized) {
+                try {
+                    console.log('[SCENE] 初始化场景管理器...');
+                    window.sceneManager = new SceneManager();
+                    sceneManagerInitialized = true;
+                    console.log('[SCENE] 场景管理器初始化成功, playerState =', window.sceneManager.getPlayerState());
+                } catch (err) {
+                    console.error('[SCENE ERROR] 场景管理器初始化失败:', err);
+                    console.error(err.stack);
+                }
+            }
+        });
+    </script>
 </body>
 </html>
