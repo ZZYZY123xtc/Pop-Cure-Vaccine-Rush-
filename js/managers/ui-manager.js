@@ -71,22 +71,25 @@ export class UIManager {
             return;
         }
         
-        // 被动技能（闪电）- Level 5+ 才能使用（Level 4 完成后解锁）
-        const shouldShowLightning = skillManager.hasSkill('lightning') && currentLevelIndex >= 4;
+        // 🔥 修复：只要解锁了技能就显示，后续关卡也保留
+        // 被动技能（闪电）- 只要解锁就显示
+        const shouldShowLightning = skillManager.hasSkill('lightning');
         if (shouldShowLightning) {
             this.passiveSkillArea.classList.remove('hidden');
+            console.log('[UI] ✅ 闪电技能UI已显示');
         } else {
             this.passiveSkillArea.classList.add('hidden');
         }
         
-        // 主动技能（冰冻）- Level 4+ 才能使用（Level 3 完成后解锁）
-        const shouldShowFreeze = skillManager.hasSkill('freeze') && currentLevelIndex >= 3;
+        // 主动技能（冰冻）- 只要解锁就显示
+        const shouldShowFreeze = skillManager.hasSkill('freeze');
         if (shouldShowFreeze) {
             this.skillContainer.classList.remove('hidden');
             this.activeSkillBtn.classList.remove('locked');
             this.activeSkillBtn.classList.remove('hidden');
+            console.log('[UI] ✅ 冰冻技能UI已显示');
         } else {
-            // 技能未解锁或关卡不够时隐藏
+            // 技能未解锁时隐藏
             this.skillContainer.classList.add('hidden');
             this.activeSkillBtn.classList.add('hidden');
             this.activeSkillBtn.classList.add('locked');

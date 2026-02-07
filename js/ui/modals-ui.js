@@ -116,11 +116,14 @@ export class ModalsUI {
     showSkillUnlockModal(skillName, onEquip) {
         const skillData = SKILL_GUIDE[skillName];
         if (!skillData) {
-            console.error('未找到技能数据:', skillName);
-            this.showLevelComplete();
+            console.error('[Modals] 未找到技能数据:', skillName);
+            console.error('[Modals] 可用技能:', Object.keys(SKILL_GUIDE));
+            // 🔥 修复：不要显示关卡完成，直接调用回调开始游戏
+            if (onEquip) onEquip();
             return;
         }
 
+        console.log('[Modals] ✅ 显示技能解锁弹窗:', skillName);
         this.unlockSkillIcon.textContent = skillData.icon;
         this.unlockSkillName.textContent = skillData.name;
         this.unlockSkillType.textContent = skillData.type;
@@ -134,11 +137,15 @@ export class ModalsUI {
         this.skillDemo.start(skillName);
 
         this.equipSkillBtn.onclick = () => {
+            console.log('[Modals] 玩家点击"装备技能"按钮');
             this.skillDemo.stop();
             this.skillUnlockModal.classList.remove('visible');
             this.skillUnlockModal.classList.add('hidden');
-            if (onEquip) onEquip();
-            this.showLevelComplete();
+            // 🔥 修复：调用回调激活游戏，不要显示关卡完成
+            if (onEquip) {
+                console.log('[Modals] 调用 onEquip 回调，开始游戏');
+                onEquip();
+            }
         };
     }
 

@@ -21,8 +21,8 @@ class SkillManager {
         this.lightningTargets = []; // 存储闪电击中的目标位置
         this.lightningOrigin = { x: 0, y: 0 }; // 闪电起点
         
-        // 从本地存储加载已解锁的技能
-        this.loadProgress();
+        // 🚫 禁用技能进度保存：每次刷新都清空已解锁技能
+        // this.loadProgress();
     }
     
     /**
@@ -51,8 +51,9 @@ class SkillManager {
             this.comboCount++;
             
             // 检查是否触发闪电（每 5 连击触发一次）
-            if (this.hasSkill('lightning') && this.comboCount % 5 === 0) {
-                console.log(`⚡ 闪电触发！Combo: ${this.comboCount}`);
+            if (this.hasSkill('lightning') && this.comboCount >= 5) {
+                console.log(`⚡ 闪电触发！Combo: ${this.comboCount} → 重置为0`);
+                this.comboCount = 0; // 🔥 触发闪电后立即归零，重新开始计数
                 return true;
             }
         } else {
@@ -71,9 +72,10 @@ class SkillManager {
     
     /**
      * 触发冰冻技能
+     * @param {Function} onFreezeEnd - 冰冻结束后的回调函数
      * @returns {boolean} 是否成功触发（false 表示技能未解锁或正在冷却）
      */
-    triggerFreeze() {
+    triggerFreeze(onFreezeEnd) {
         // 检查技能是否已解锁
         if (!this.hasSkill('freeze')) {
             console.log('❌ 冰冻技能尚未解锁');
@@ -94,6 +96,11 @@ class SkillManager {
         this.freezeTimer = setTimeout(() => {
             this.isFrozen = false;
             console.log('❄️ 冰冻效果已结束');
+            
+            // 🔥 调用回调（在冰冻结束后才开始CD）
+            if (onFreezeEnd) {
+                onFreezeEnd();
+            }
         }, 5000);
         
         return true;
@@ -190,13 +197,14 @@ class SkillManager {
     }
     
     /**
-     * 保存技能进度到 localStorage
+     * 保存技能进度到 localStorage (🚫 已禁用)
      */
     saveProgress() {
-        const data = {
-            unlockedSkills: Array.from(this.unlockedSkills)
-        };
-        localStorage.setItem('skillProgress', JSON.stringify(data));
+        // 🚫 禁用进度保存：每次刷新都重新开始
+        // const data = {
+        //     unlockedSkills: Array.from(this.unlockedSkills)
+        // };
+        // localStorage.setItem('skillProgress', JSON.stringify(data));
     }
     
     /**

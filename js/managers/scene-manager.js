@@ -127,8 +127,10 @@ export class SceneManager {
         console.log('[SceneManager] 游戏层已显示 (z-index: 500)');
 
         // 触发游戏开始（通知 game.js 加载该关卡）
-        // 使用 window.SCENE_MANAGER_CALLBACK 或 dispatchEvent 来通知
-        const event = new CustomEvent('sceneManagerEnterLevel', { detail: { levelId } });
+        // ✅ 修复：将关卡ID转换为数组索引（levelId - 1）
+        const levelIndex = levelId - 1;
+        console.log(`[SceneManager] 关卡ID ${levelId} -> 数组索引 ${levelIndex}`);
+        const event = new CustomEvent('sceneManagerEnterLevel', { detail: { levelId: levelIndex } });
         window.dispatchEvent(event);
     }
 

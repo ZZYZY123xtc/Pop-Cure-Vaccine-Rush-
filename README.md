@@ -178,13 +178,14 @@ containmen_virus/
 ├── css/
 ├── js/
 │   ├── core/
-│   │   ├── game.js
+│   │   ├── game.js  ⚡ 重构：精简核心入口（~180行）
 │   │   ├── config.js
 │   │   └── game-manager.js
 │   ├── managers/
 │   │   ├── scene-manager.js
 │   │   ├── ui-manager.js
-│   │   └── map-renderer.js
+│   │   ├── map-renderer.js
+│   │   └── game-events.js ✨ 新增：游戏事件处理
 │   ├── entities/
 │   │   ├── virus.js
 │   │   └── particle.js
@@ -195,7 +196,10 @@ containmen_virus/
 │   ├── systems/
 │   │   ├── tutorial.js
 │   │   ├── effects.js
-│   │   └── skill-demo.js
+│   │   ├── skill-demo.js
+│   │   ├── game-loop.js ✨ 新增：主游戏循环与渲染
+│   │   ├── input-handler.js ✨ 新增：输入事件处理
+│   │   └── debugger.js ✨ 新增：调试工具命令
 │   └── ui/
 │       ├── opening.js
 │       └── modals-ui.js
@@ -220,7 +224,7 @@ CSS 模块（`css/` 目录）
 JS 层次（`js/`）
 
 核心层（`js/core/`）
-- `game.js`：战斗场景主循环，病毒生成/更新/绘制、点击处理、技能触发点、对外导出 `startGame(levelId)` 与 `init()`。
+- **`game.js`** ⚡ **重构**：战斗场景核心入口，初始化、Canvas管理、病毒生成、事件整合。现已精简为 ~180 行，核心逻辑分离到系统模块。
 - `config.js`：全局常量与病毒类型定义（`CONFIG`）。
 - `game-manager.js`：高层关卡流转与游戏状态管理（关卡选择、胜利/失败判定、事件广播）。
 
@@ -228,6 +232,7 @@ JS 层次（`js/`）
 - `scene-manager.js`：地图场景控制、体力系统、localStorage 持久化、与 `map-renderer` 的交互。
 - `ui-manager.js`：页面 UI 更新接口（进度条、技能 UI、连击、弹窗触发桥接）。
 - `map-renderer.js`：地图 Canvas 渲染（关卡节点、路径、粒子背景与交互判定）。
+- **`game-events.js`** ✨ **新增**：游戏事件处理（教程结束、胜利失败、关卡切换、窗口事件）。
 
 实体层（`js/entities/`）
 - `virus.js`：病毒类（运动、边界处理、分裂逻辑、绘制多种外观）。
@@ -242,6 +247,9 @@ JS 层次（`js/`）
 - `tutorial.js`：教学引导逻辑（气泡定位、步骤管理、教程病毒锚点）。
 - `effects.js`：视觉效果管理（粒子池、爆炸、胜利波、教程高亮）。
 - `skill-demo.js`：技能弹窗内的小型演示/Canvas 动画。
+- **`game-loop.js`** ✨ **新增**：主游戏循环（渲染、病毒更新、状态检查）。
+- **`input-handler.js`** ✨ **新增**：输入事件处理（鼠标点击、技能触发、按钮事件）。
+- **`debugger.js`** ✨ **新增**：调试工具命令（控制台快捷指令）。
 
 界面层（`js/ui/`）
 - `opening.js`：开场动画（扫描仪/打字机效果），完成后派发事件触发场景初始化。
@@ -252,12 +260,118 @@ JS 层次（`js/`）
 
 ---
 
+## 新增模块说明（拆分自 game.js）
+
+### 📌 `js/systems/game-loop.js` - 游戏循环与渲染
+负责核心游戏循环的运行和画面更新。
+
+**主要函数：**
+- `startGameLoop(canvas, ctx, viruses, ...)` - 启动主游戏循环
+  - 处理状态机（PLAYING / WINNING / LEVEL_OVER）
+  - 更新病毒、粒子、冷却时间
+  - 检查胜负条件
+- `updateGamePlaying()` - 游戏进行中的逻辑
+- `updateGameWinning()` - 胜利动画逻辑
+- `updateViruses()` - 病毒更新（移动、分裂、碰撞）
+
+**使用场景：**
+```javascript
+import { startGameLoop } from '../systems/game-loop.js';
+// 在 startGame() 中调用
+startGameLoop(canvas, ctx, viruses, freezeCooldown, FREEZE_COOLDOWN_MAX, {}, spawnVirus, triggerComplete, triggerOver);
+```
+
+### 📌 `js/systems/input-handler.js` - 输入事件处理
+负责处理所有用户输入（鼠标点击、技能按钮、导航按钮）。
+
+**主要函数：**
+- `initMouseHandler(canvas, viruses, updateCombo)` - 初始化Canvas点击事件
+  - 教程模式：只能点击教程病毒
+  - 游戏模式：点击消灭病毒、触发连击、激活闪电
+- `initSkillButton(btn, freezeCooldown, maxCD, setCD)` - 初始化冰冻技能按钮
+  - 检查CD和游戏状态
+  - 执行技能回调
+- `initNextLevelButton(btn, uiManager, callback)` - "下一关"按钮
+- `initGameOverButton(btn)` - "返回地图"按钮
+
+**使用场景：**
+```javascript
+import { initMouseHandler, initSkillButton } from '../systems/input-handler.js';
+// 在 init() 中调用
+initMouseHandler(canvas, viruses, updateComboDisplay);
+initSkillButton(uiManager.activeSkillBtn, window.freezeCooldown, FREEZE_COOLDOWN_MAX, (cd) => {
+    window.freezeCooldown = cd;
+});
+```
+
+### 📌 `js/systems/debugger.js` - 调试工具
+提供控制台快捷命令，用于快速测试和调试。
+
+**可用命令：**
+- `debugJumpToLevel(n)` - 跳到第 n+1 关并自动解锁对应技能
+- `debugShowStatus()` - 打印当前游戏状态（关卡、病毒数、CD等）
+- `debugResetCooldown()` - 立即重置冰冻CD
+- `debugUnlockAllSkills()` - 解锁所有技能
+- `debugCloseAllModals()` - 关闭所有弹窗
+- `debugActivateGame()` - 强制激活游戏（如果卡住）
+- `debugClearProgress()` - 清除游戏进度（回到第一关）
+
+**使用场景：**
+```javascript
+import { initDebugger } from '../systems/debugger.js';
+// 在 init() 中调用，会自动添加所有命令到 window
+initDebugger(uiManager, tutorialManager, viruses, freezeCooldown, FREEZE_COOLDOWN_MAX);
+
+// 然后在浏览器控制台输入
+debugJumpToLevel(3);  // 跳到第4关
+debugShowStatus();    // 查看状态
+```
+
+### 📌 `js/managers/game-events.js` - 游戏事件处理
+管理游戏中的全局事件（教程结束、胜利失败、关卡切换等）。
+
+**主要函数：**
+- `initTutorialEndEvent(viruses, uiManager, ...)` - 监听教程结束事件
+  - 清理教程病毒
+  - 生成初始病毒
+  - 激活游戏
+- `triggerLevelComplete(gameManager, uiManager)` - 关卡完成（显示完成弹窗）
+- `triggerGameOver(gameManager, uiManager)` - 游戏失败（显示失败弹窗）
+- `triggerGameWin(gameManager, uiManager)` - 游戏全胜（显示胜利弹窗）
+- `proceedToNextLevel(canvas, gameManager, uiManager, startGame)` - 进入下一关
+  - 重置CD和循环标志
+  - 调用 startGame() 启动下一关
+- `initWindowResizeHandler(tutorialManager)` - 窗口resize处理
+
+**使用场景：**
+```javascript
+import { triggerLevelComplete, triggerGameOver, proceedToNextLevel } from '../managers/game-events.js';
+
+// 在游戏过程中触发
+if (playerVictory) triggerLevelComplete(gameManager, uiManager);
+if (playerDefeated) triggerGameOver(gameManager, uiManager);
+
+// 点击"下一关"按钮时
+proceedToNextLevel(canvas, gameManager, uiManager, startGame);
+```
+
+---
+
 ## 我已做过的动作（变更清单）
 
 - 按你指定的分层结构将 JS 文件移动到 `js/` 下相应目录，并修正了模块导入路径。
 - 将 `partical.js` 重命名为 `particle.js` 并更新引用。
 - 删除了 `src/` 下重复或占位的文件（`src/utils/*`、`src/components/*`、`src/scenes/*`），因为实现已统一到 `js/` 下。
 - 更新了 `index.html` 中导入路径，使其指向 `./js/core/game.js` 与 `./js/managers/scene-manager.js`。
+
+### 🎯 Phase 6：代码重构分离（最新）
+- ✅ **拆分 `game.js`（795行 → 180行）**
+  - `js/systems/game-loop.js`：主游戏循环与渲染逻辑
+  - `js/systems/input-handler.js`：鼠标点击、技能按钮、关卡切换事件
+  - `js/systems/debugger.js`：调试命令（debugJumpToLevel 等）
+  - `js/managers/game-events.js`：游戏事件处理（教程结束、胜利失败等）
+- ✅ 保留 `game.js` 为精简的核心入口（init、startGame、基础初始化）
+- ✅ 所有模块独立、职责清晰、便于调试
 
 ---
 

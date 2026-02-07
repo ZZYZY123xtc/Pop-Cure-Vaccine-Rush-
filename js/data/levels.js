@@ -17,14 +17,14 @@ export const CHAPTER_CONFIG = {
     2: {
         id: 2,
         title: "CHAPTER 02", 
-        subtitle: "咝喉重地 / Throat Zone",
+        subtitle: "咽喉重地 / Throat Zone",
         // 稍微深一点的红色，暗示发炎，但要柔和 🩷
         bgGradientStart: "#FFF0F0", 
         bgGradientEnd: "#FFB7B2",   // 柔和红
         particleColor: "rgba(255, 255, 255, 0.4)",
         nodeColor: "#FF9AA2", // 节点变红
         // 气氛：稍微温暖（轻微发炎）
-        atmosphere: "温暖的咝喉区域"
+        atmosphere: "温暖的咽喉区域"
     }
 };
 
@@ -49,7 +49,7 @@ export const LEVELS = [
         threshold: 50,
         spawnInterval: 1600,
         availableTypes: ['A', 'B'],  // 引入分裂型
-        difficulty: 1.0,
+        difficulty: 1.3,
         intro: 'B',
         mapConfig: { x: 0.5, y: 0.45, icon: 'level' } // 中间位置
     },

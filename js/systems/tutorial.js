@@ -2,6 +2,7 @@
  * 教学引导系统
  */
 import { TUTORIAL_STEPS } from '../data/story.js';
+import { modals } from '../ui/modals-ui.js';
 
 export class TutorialManager {
     constructor() {
@@ -25,27 +26,53 @@ export class TutorialManager {
     checkTutorial(currentLevelIndex) {
         // 第一关总是显示引导（病毒图鉴介绍后）
         if (currentLevelIndex === 0 && this.tutorialActive) {
-            // 延迟显示，让玩家先看到游戏画面和教程病毒
-            setTimeout(() => {
-                this.showTutorial();
-            }, 500);
+            console.log('[Tutorial] checkTutorial 被调用，准备显示教程气泡');
+            // 💡 改为立即显示，不再延迟（避免时序混乱）
+            // 如果弹窗有延迟，教程也会自动延迟显示
+            this.showTutorial();
         }
     }
 
     // 显示教学引导
     showTutorial() {
         const tutorialOverlay = document.getElementById('tutorial-overlay');
-        if (tutorialOverlay) {
-            // 🔥 恢复游戏状态（教程期间游戏应该暂停但不是 LEVEL_OVER）
-            import('../core/game-manager.js').then(({gameManager, GAME_STATE}) => {
-                console.log('[Tutorial] 设置游戏状态为 LEVEL_OVER （暂停）');
-                gameManager.gameState = GAME_STATE.LEVEL_OVER;
+        if (!tutorialOverlay) {
+            console.error('[Tutorial] tutorial-overlay 元素不存在！');
+            return;
+        }
+        
+        // 🎯 使用 Promise 链确保执行顺序正确
+        import('../core/game-manager.js').then(({gameManager, GAME_STATE}) => {
+            // 1️⃣ 首先收集所有必要的信息
+            console.log('[Tutorial] 开始显示教程，tutorialVirus:', {
+                x: this.tutorialVirus?.x,
+                y: this.tutorialVirus?.y,
+                radius: this.tutorialVirus?.radius,
+                exists: !!this.tutorialVirus
             });
             
+            // 2️⃣ 设置游戏状态为暂停
+            gameManager.gameState = GAME_STATE.LEVEL_OVER;
+            console.log('[Tutorial] 游戏状态已设置为 LEVEL_OVER');
+            
+            // 3️⃣ 让 DOM 操作更新（下一帧）
+            requestAnimationFrame(() => {
+                // 无论之前的状态如何，现在确保显示 overlay
+                tutorialOverlay.classList.remove('hidden');
+                
+                // 4️⃣ 然后显示第一步指导
+                this.currentGuideStep = 0;
+                this.showGuideStep(this.currentGuideStep);
+                
+                console.log('[Tutorial] 教程已显示，当前步骤:', this.currentGuideStep);
+            });
+        }).catch((error) => {
+            console.error('[Tutorial] 导入 gameManager 失败:', error);
+            // 降级处理：即使导入失败，也继续显示教程
             tutorialOverlay.classList.remove('hidden');
-            this.currentGuideStep = 0;  // 从 0 开始（数组索引）
+            this.currentGuideStep = 0;
             this.showGuideStep(this.currentGuideStep);
-        }
+        });
     }
 
     // 显示指定步骤（使用锚点定位）
@@ -64,13 +91,16 @@ export class TutorialManager {
         
         // 🎯 如果是病毒锚点，使用 modals.showTutorialAt 方法
         if (stepConfig.anchor.type === 'virus' && stepConfig.anchor.target === 'tutorialVirus' && this.tutorialVirus) {
-            console.log('[Tutorial] 使用 modals.showTutorialAt 方法定位病毒');
+            console.log('[Tutorial] 使用 modals.showTutorialAt 方法定位病毒, 病毒坐标:', {
+                x: this.tutorialVirus.x,
+                y: this.tutorialVirus.y,
+                radius: this.tutorialVirus.radius
+            });
             
-            // 动态导入 modals（避免循环依赖）
-            import('../ui/modals-ui.js').then(({modals}) => {
-                modals.showTutorialAt(this.tutorialVirus, stepConfig, () => {
-                    this.nextGuide();
-                });
+            // 直接调用已导入的 modals
+            modals.showTutorialAt(this.tutorialVirus, stepConfig, () => {
+                console.log('[Tutorial] 用户点击了"下一步"按钮');
+                this.nextGuide();
             });
             return;
         }
