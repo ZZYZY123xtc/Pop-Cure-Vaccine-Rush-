@@ -225,18 +225,29 @@ function initTutorialEndEvent() {
     window.addEventListener('tutorialEnd', () => {
         console.log('[GAME] 收到 tutorialEnd 事件');
         
-        // 清理教程病毒
-        viruses = viruses.filter(v => !v.tutorialLock && !v.isTutorial);
+        // 🔥 修复：直接修改原始数组，而不是创建新数组
+        // 这样游戏循环中的 viruses 引用才能正确更新
+        for (let i = viruses.length - 1; i >= 0; i--) {
+            if (viruses[i].tutorialLock || viruses[i].isTutorial) {
+                viruses.splice(i, 1);
+            }
+        }
         console.log('[GAME] 教程病毒已清理，当前病毒数:', viruses.length);
         
         gameManager.gameState = GAME_STATE.PLAYING;
         gameManager.isGameActive = true;
+        console.log('[GAME] 游戏状态设置为 PLAYING，isGameActive =', gameManager.isGameActive);
+        
+        // 🔥 重置生成计时器（使其立即可以生成新病毒）
+        gameManager.spawnTimer = gameManager.currentSpawnInterval;
+        console.log('[GAME] spawnTimer 已重置为:', gameManager.currentSpawnInterval);
         
         // 生成初始病毒
         const currentLevel = LEVELS[gameManager.getCurrentLevelIndex()];
         const initialCount = currentLevel?.initialCount || 3;
         console.log(`[GAME] 生成 ${initialCount} 个初始病毒`);
         spawnInitialViruses(initialCount);
+        console.log('[GAME] 初始病毒已生成，当前病毒数:', viruses.length);
         
         uiManager.updateSkillUI(false, gameManager.getCurrentLevelIndex(), skillManager);
         
