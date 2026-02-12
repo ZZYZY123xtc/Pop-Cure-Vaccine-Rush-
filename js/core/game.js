@@ -46,6 +46,10 @@ const FREEZE_COOLDOWN_MAX = 20; // 🔥 冰冻CD时间
 export function startGame(levelId) {
     console.log('[GAME] startGame 被调用, levelId =', levelId);
     
+    // 🔥 **关键修复**：最先清理所有 UI 覆盖层（包括失败/胜利弹窗）
+    uiManager.resetUIForNewLevel();
+    console.log('[GAME] ✅ UI 已重置');
+    
     // 🔥 关键修复：重置游戏循环标志，确保每次启动关卡都能重新启动渲染循环
     window.gameLoopStarted = false;
     console.log('[GAME] ✅ 重置游戏循环标志');
@@ -65,9 +69,6 @@ export function startGame(levelId) {
     // 确保Canvas可见并且尺寸正确
     resizeCanvas();
     console.log('[GAME] Canvas尺寸:', canvas.width, 'x', canvas.height);
-    
-    // 强制隐藏所有弹窗
-    uiManager.hideAllModals();
     
     // 构建场景管理器，传递游戏相关的上下文
     const sceneManager = { 

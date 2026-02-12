@@ -116,29 +116,81 @@ export class UIManager {
         }
     }
 
-    // 隐藏所有弹窗
+    // 🔥 改进版：隐藏所有覆盖层和弹窗（包括开始屏幕）
     hideAllModals() {
-        this.gameOverScreen.classList.add('hidden');
-        this.gameWinScreen.classList.add('hidden');  
-        this.levelCompleteScreen.classList.add('hidden');
+        // 隐藏结算弹窗
+        if (this.gameOverScreen) this.gameOverScreen.classList.add('hidden');
+        if (this.gameWinScreen) this.gameWinScreen.classList.add('hidden');  
+        if (this.levelCompleteScreen) this.levelCompleteScreen.classList.add('hidden');
+        
+        // 🔥 隐藏开始屏幕（返回地图后重新进关时的关键）
+        if (this.startScreen) {
+            this.startScreen.classList.add('hidden');
+            this.startScreen.style.display = 'none';
+        }
+        
+        // 隐藏技能相关UI（重新开始时清空）
+        if (this.skillContainer) this.skillContainer.classList.add('hidden');
+        if (this.passiveSkillArea) this.passiveSkillArea.classList.add('hidden');
+        
+        // 隐藏图鉴和技能解锁弹窗
+        if (this.introModal) this.introModal.classList.add('hidden');
+        if (this.skillUnlockModal) this.skillUnlockModal.classList.add('hidden');
+        
+        console.log('[UI] ✅ 已隐藏所有覆盖层和弹窗');
+    }
+    
+    // 🔥 新增：完整的 UI 重置方法（关卡启动时用）
+    resetUIForNewLevel() {
+        console.log('[UI] 重置 UI 以准备新关卡');
+        
+        // 隐藏所有弹窗
+        this.hideAllModals();
+        
+        // 重置技能UI（不显示CDoverlay）
+        if (this.cooldownOverlay) {
+            this.cooldownOverlay.style.opacity = '0';
+            this.cooldownOverlay.style.height = '0%';
+        }
+        
+        // 清空连击显示
+        if (this.comboCountEl) {
+            this.comboCountEl.textContent = '0';
+        }
+        
+        // 重置进度条
+        if (this.cureBarHeader) {
+            this.cureBarHeader.style.width = '0%';
+        }
+        if (this.infectionBarFooter) {
+            this.infectionBarFooter.style.width = '0%';
+        }
+        
+        console.log('[UI] ✅ UI 重置完毕');
     }
 
-    // 显示游戏结束界面
+    // 🔥 修复：添加 null 检查防止崩溃
     showGameOver() {
-        this.gameOverScreen.classList.remove('hidden');
-        this.gameOverScreen.classList.add('visible');
+        if (this.gameOverScreen) {
+            this.gameOverScreen.classList.remove('hidden');
+            this.gameOverScreen.classList.add('visible');
+        }
     }
 
-    // 显示游戏胜利界面
+    // 🔥 修复：添加 null 检查防止崩溃
     showGameWin() {
-        this.gameWinScreen.classList.remove('hidden');
-        this.gameWinScreen.classList.add('visible');
+        if (this.gameWinScreen) {
+            this.gameWinScreen.classList.remove('hidden');
+            this.gameWinScreen.classList.add('visible');
+        }
     }
 
-    // 显示关卡完成界面
+    // 🔥 修复：添加 null 检查防止崩溃
     showLevelComplete() {
-        this.levelCompleteScreen.classList.remove('hidden');
-        this.levelCompleteScreen.classList.add('visible');
+        if (this.levelCompleteScreen) {
+            this.levelCompleteScreen.classList.remove('hidden');
+            this.levelCompleteScreen.classList.add('visible');
+        }
     }
 
     // 显示图鉴弹窗
