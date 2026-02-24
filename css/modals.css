@@ -8,7 +8,7 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     z-index: 9999;
-    display: flex !important;
+    display: none; /* 🔥 关键修复：默认完全隐藏 */
     justify-content: center;
     align-items: center;
     opacity: 0;
@@ -20,6 +20,7 @@
 #start-screen.visible, 
 #game-over.visible, 
 #level-complete.visible {
+    display: flex !important; /* 🔥 显示时才启用flex布局 */
     opacity: 1;
     pointer-events: auto;
 }
@@ -255,6 +256,89 @@
     font-size: 16px;
     color: #FF9AA2;
     font-weight: bold;
+}
+
+/* 第25关：奶油浮窗 */
+.final-boss-briefing-card {
+    position: relative;
+    width: min(92vw, 560px);
+    border-radius: 20px;
+    padding: 28px 26px;
+    background: rgba(255, 255, 240, 0.95);
+    border: 2px solid transparent;
+    background-image:
+        linear-gradient(rgba(255, 255, 240, 0.95), rgba(255, 255, 240, 0.95)),
+        linear-gradient(135deg, #FFE7A3, #FFF6D8, #FFD86A);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 0 20px #FFF2B2;
+    color: #6D665B;
+    transform: scale(0.94);
+    animation: vanillaFloatIn 0.25s ease-out forwards, vanillaBreathe 2.2s ease-in-out 0.35s infinite;
+}
+
+.final-boss-briefing-card h2 {
+    margin: 0 0 14px;
+    color: #5E5647;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.final-boss-briefing-card p {
+    margin: 10px 0;
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+.final-boss-briefing-card .gold-number {
+    color: #C7961C;
+    font-weight: 800;
+}
+
+#final-boss-briefing-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 800;
+    color: #5E5647;
+    background: linear-gradient(135deg, #FFE09A, #FFD16A);
+    box-shadow: 0 8px 18px rgba(199, 150, 28, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#final-boss-briefing-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(199, 150, 28, 0.4);
+}
+
+#final-boss-briefing-btn:active {
+    transform: translateY(1px) scale(0.99);
+}
+
+@keyframes vanillaFloatIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes vanillaBreathe {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.015);
+    }
 }
 
 .skill-demo-area {
@@ -558,4 +642,190 @@
     .bubble-content p {
         font-size: 13px;
     }
+}
+
+/* ============================================
+   🧪 萌萌的 Level 提示 Toast
+   ============================================ */
+.level-tip-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: linear-gradient(145deg, rgba(255, 245, 245, 0.9) 0%, rgba(255, 232, 240, 0.9) 100%);
+    border: 2px solid #ffb7c5;
+    border-radius: 20px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 
+        0 8px 30px rgba(255, 105, 180, 0.25),
+        0 0 0 6px rgba(255, 183, 197, 0.08);
+    z-index: 10000;
+    min-width: 280px;
+    max-width: 380px;
+    opacity: 0;
+    pointer-events: none !important; /* 🔥 关键修复：完全穿透点击 */
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.level-tip-toast.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: none !important; /* 🔥 关键修复：显示时也不拦截点击 */
+}
+
+.level-tip-toast.hidden {
+    display: none;
+}
+
+.toast-icon {
+    font-size: 36px; /* 🔥 缩小图标 */
+    animation: toast-bounce 1s ease-in-out infinite;
+}
+
+@keyframes toast-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-size: 16px; /* 🔥 缩小标题 */
+    font-weight: 700;
+    color: #ff6b9d;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 4px rgba(255, 105, 180, 0.2);
+}
+
+.toast-text {
+    font-size: 13px; /* 🔥 缩小正文 */
+    color: #666;
+    line-height: 1.5;
+}
+
+/* 📱 移动端适配 */
+@media (max-width: 768px) {
+    .level-tip-toast {
+        min-width: 240px;
+        max-width: 85%;
+        padding: 12px 16px;
+    }
+    
+    .toast-icon {
+        font-size: 28px;
+    }
+    
+    .toast-title {
+        font-size: 14px;
+    }
+    
+    .toast-text {
+        font-size: 12px;
+    }
+}
+
+/* ⏸️ 暂停菜单 */
+#pause-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 10500; /* ⚙️ 提高层级，确保在所有UI之上 */
+    display: none; /* 🔥 关键修复：默认完全隐藏，不拦截任何事件 */
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#pause-menu.visible {
+    display: flex !important; /* 🔥 显示时才启用flex布局 */
+    opacity: 1;
+    pointer-events: auto !important; /* ⚙️ 强制启用点击 */
+}
+
+#pause-menu .modal-content {
+    background: #fff;
+    border-radius: 30px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    min-width: 300px;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: auto; /* ⚙️ 确保弹窗内容可以点击 */
+    position: relative; /* 确保在堆叠上下文中正常显示 */
+    z-index: 10000; /* 确保在最高层级 */
+}
+
+#pause-menu.visible .modal-content {
+    transform: scale(1);
+}
+
+#pause-menu h2 {
+    color: #FF9AA2;
+    font-size: 32px;
+    margin: 0 0 30px 0;
+    text-shadow: 2px 2px 0 #FFF0F5;
+}
+
+#pause-menu p {
+    color: #888;
+    font-size: 16px;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+#pause-menu .primary-btn,
+#pause-menu .secondary-btn {
+    width: 100%;
+    margin: 10px 0;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
+    pointer-events: auto !important; /* ⚙️ 强制确保按钮可以点击 */
+    position: relative; /* 确保在正常文档流中 */
+    z-index: 10001; /* 确保按钮在最顶层 */
+    user-select: none; /* 防止文本选择干扰点击 */
+    -webkit-tap-highlight-color: transparent; /* 移除触摸高亮 */
+}
+
+#pause-menu .primary-btn {
+    background: linear-gradient(135deg, #B5EAD7 0%, #85E3B0 100%);
+    color: #fff;
+}
+
+#pause-menu .primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(133, 227, 176, 0.4);
+}
+
+#pause-menu .secondary-btn {
+    background: linear-gradient(135deg, #FFB6C1 0%, #FF9AA2 100%);
+    color: #fff;
+}
+
+#pause-menu .secondary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 154, 162, 0.4);
+}
+
+#pause-menu .primary-btn:active,
+#pause-menu .secondary-btn:active {
+    transform: translateY(0);
 }

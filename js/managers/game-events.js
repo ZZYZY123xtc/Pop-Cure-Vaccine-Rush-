@@ -97,14 +97,31 @@ export function proceedToNextLevel(canvas, gameManager, uiManager, startGame) {
         if (window.freezeCooldown !== undefined) {
             window.freezeCooldown = 0;
             console.log('[GAME] ✅ 关卡切换：冰冻技能CD已重置');
-            
-            // 🔥 立即更新UI，移除cooldown样式
-            if (uiManager && uiManager.activeSkillBtn) {
-                uiManager.activeSkillBtn.classList.remove('cooldown');
-                if (uiManager.cooldownOverlay) {
-                    uiManager.cooldownOverlay.style.height = '0%';
-                }
-            }
+        }
+        
+        // 🔥 重置 skillManager 的冰冻状态
+        if (skillManager.isFrozen) {
+            skillManager.isFrozen = false;
+            console.log('[GAME] ✅ 关卡切换：skillManager.isFrozen 已重置');
+        }
+        
+        // 🔥 清除可能残留的冰冻计时器
+        if (skillManager.freezeTimer) {
+            clearTimeout(skillManager.freezeTimer);
+            skillManager.freezeTimer = null;
+            console.log('[GAME] ✅ 关卡切换：清除残留的 freezeTimer');
+        }
+        
+        // 🔥 重置冰冻剩余时间
+        if (skillManager.freezeTimeRemaining > 0) {
+            skillManager.freezeTimeRemaining = 0;
+            console.log('[GAME] ✅ 关卡切换：freezeTimeRemaining 已重置');
+        }
+        
+        // 🔥 立即更新UI，显示技能就绪状态
+        if (uiManager && uiManager.updateCooldownUI) {
+            uiManager.updateCooldownUI(0, 20, false);
+            console.log('[GAME] ✅ 关卡切换：UI更新为技能就绪状态');
         }
         
         // 启动下一关

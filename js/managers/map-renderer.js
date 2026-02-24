@@ -12,6 +12,13 @@ export class MapRenderer {
         this.state = playerState; // { maxLevel: 1, stars: {}, energy: 30 }
         this.onNodeClick = onNodeClick;
 
+        // 初始化尺寸（等待 ViewportManager 设置）
+        this.width = 0;
+        this.height = 0;
+        
+        // 🔥 调试标志：是否已输出过绘制日志
+        this.firstDrawLogged = false;
+        
         // 🌸 章节系统
         this.currentChapter = 1; // 默认从第一章开始
         this.chapterConfig = CHAPTER_CONFIG[this.currentChapter];
@@ -28,6 +35,7 @@ export class MapRenderer {
             prevBtn: { x: 50, y: 0, width: 80, height: 40, visible: false },
             nextBtn: { x: 0, y: 0, width: 80, height: 40, visible: false }
         };
+        this.nodeRenderCache = [];
         
         // 绑定事件
         this.setupEvents();
@@ -77,6 +85,16 @@ export class MapRenderer {
         return this.levels.filter(level => level.chapter === this.currentChapter);
     }
 
+    getMaxUnlockedLevel() {
+        const totalLevels = this.levels.length;
+        const rawMaxLevel = Number(this.state?.maxLevel);
+
+        if (!Number.isFinite(rawMaxLevel)) return 1;
+
+        const normalized = Math.floor(rawMaxLevel);
+        return Math.min(Math.max(normalized, 1), totalLevels);
+    }
+
     // --- 1. 粒子系统 (让背景活起来) ---
     createParticles(count) {
         let p = [];
@@ -92,20 +110,24 @@ export class MapRenderer {
         return p;
     }
 
+    // --- 1.5 响应 ViewportManager 的尺寸变化 ---
+    resize(width, height, dpr) {
+        console.log(`[MapRenderer] Canvas 尺寸已更新: ${width}x${height} (DPR: ${dpr})`);
+        // ViewportManager 已经设置了 canvas.width/height 和 DPR 缩放
+        // 这里只需要更新逻辑尺寸
+        this.width = width;
+        this.height = height;
+        // 立即重绘（loop 会持续绘制，这里确保立即更新）
+        this.draw();
+    }
+
     // --- 2. 渲染主循环 ---
     loop() {
         this.time += 0.03; // 时间流逝速度
         
-        // 适配屏幕尺寸 (Retina屏优化)
-        const dpr = window.devicePixelRatio || 1;
-        const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
-        this.ctx.scale(dpr, dpr);
-        // 逻辑宽高
-        this.width = rect.width;
-        this.height = rect.height;
-
+        // ✅ 尺寸由 ViewportManager 通过 resize() 回调管理
+        // 不再每帧读取 getBoundingClientRect()，避免隐藏层返回 0
+        
         this.draw();
         requestAnimationFrame(() => this.loop());
     }
@@ -115,6 +137,12 @@ export class MapRenderer {
         const ctx = this.ctx;
         const w = this.width;
         const h = this.height;
+        
+        // 🔥 防御性检查：尺寸未初始化时不绘制
+        if (w === 0 || h === 0) {
+            console.warn('[MapRenderer] Canvas 尺寸为 0，跳过绘制');
+            return;
+        }
 
         // A. 🌸 绘制章节主题背景 (垂直渐变)
         this.drawChapterBackground(ctx, w, h);
@@ -141,6 +169,12 @@ export class MapRenderer {
         grad.addColorStop(1, this.style.bgBottom);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
+        
+        // 🔥 仅在第一次绘制时输出日志
+        if (!this.firstDrawLogged) {
+            console.log('[MapRenderer] ✅ 首次绘制成功:', w, 'x', h, '| 渐变:', this.style.bgTop, '→', this.style.bgBottom);
+            this.firstDrawLogged = true;
+        }
     }
 
     // ✨ 绘制呼吸粒子
@@ -175,6 +209,13 @@ export class MapRenderer {
         ctx.font = "bold 18px 'Varela Round', sans-serif";
         ctx.fillText(this.chapterConfig.subtitle, w / 2, h * 0.36);
         
+        // 氛围描述（诗意文字）
+        if (this.chapterConfig.atmosphere) {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.12)"; // 更淡的颜色
+            ctx.font = "14px 'Varela Round', sans-serif";
+            ctx.fillText(this.chapterConfig.atmosphere, w / 2, h * 0.40);
+        }
+        
         ctx.restore();
     }
 
@@ -203,11 +244,18 @@ export class MapRenderer {
             let endX = curr.x * w;
             let endY = getY(curr.y);
 
-            // 贝塞尔控制点：让线条柔和蜿蜒
-            let cp1x = startX;
-            let cp1y = (startY + endY) / 2;
-            let cp2x = endX;
-            let cp2y = (startY + endY) / 2;
+            // � 优雅贝塞尔曲线：紧致、流畅、有呼吸感
+            // 计算两点间的向量
+            let dx = endX - startX;
+            let dy = endY - startY;
+            
+            // ✅ 美学微调：垂直偏移从 0.25 降低到 0.15
+            // 让曲线的"肚子"更小，看起来更紧致、不会乱扭
+            const midY = startY + (endY - startY) * 0.5;
+            const cp1x = startX;
+            const cp1y = midY;
+            const cp2x = endX;
+            const cp2y = midY;
 
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
         }
@@ -218,75 +266,86 @@ export class MapRenderer {
     // 🌸 绘制关卡节点（只显示当前章节）
     drawLevelNodes(ctx, w, h, chapterLevels) {
         const getY = (percent) => h - (percent * h * 0.9) - (h * 0.05);
+        const maxUnlockedLevel = this.getMaxUnlockedLevel();
+
+        // 每帧重建，确保点击检测与绘制使用同一组坐标
+        this.nodeRenderCache = [];
 
         chapterLevels.forEach(lvl => {
-            let cx = lvl.mapConfig.x * w;
-            let cy = getY(lvl.mapConfig.y);
-            
-            // 状态判断
-            let isPassed = lvl.id < this.state.maxLevel;
-            let isCurrent = lvl.id === this.state.maxLevel;
-            let isLocked = lvl.id > this.state.maxLevel;
+            const cx = lvl.mapConfig.x * w;
+            const cy = getY(lvl.mapConfig.y);
 
-            // 半径计算 (呼吸效果)
-            let baseR = 28;
+            const isPassed = lvl.id < maxUnlockedLevel;
+            const isCurrent = lvl.id === maxUnlockedLevel;
+            const isLocked = lvl.id > maxUnlockedLevel;
+
+            const baseR = 28;
             let r = baseR;
             if (isCurrent) {
-                r += Math.sin(this.time * 3) * 3; // 快速心跳
+                r += Math.sin(this.time * 3) * 3;
             }
 
-            // 1. 绘制阴影 (增加立体感)
+            // 1) 阴影
             ctx.beginPath();
-            ctx.arc(cx, cy + 4, r, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.arc(cx, cy + 4, r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fill();
 
-            // 2. 绘制球体
+            // 2) 球体
             ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, Math.PI*2);
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
             if (isLocked) ctx.fillStyle = this.style.nodeLocked;
-            else if (isCurrent) ctx.fillStyle = this.style.nodeActive; // 章节主题色
+            else if (isCurrent) ctx.fillStyle = this.style.nodeActive;
             else ctx.fillStyle = this.style.nodePassed;
             ctx.fill();
 
-            // 3. 绘制图标/文字
-            ctx.fillStyle = "#FFF";
+            // 3) 图标/文本
+            ctx.fillStyle = '#FFF';
             ctx.font = this.style.font;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
 
             if (isLocked) {
-                ctx.fillText("🔒", cx, cy + 2);
+                ctx.fillText('🔒', cx, cy + 2);
             } else if (lvl.mapConfig.icon === 'chest') {
-                ctx.fillText("🎁", cx, cy + 2);
+                ctx.fillText('🎁', cx, cy + 2);
             } else if (lvl.mapConfig.icon === 'boss') {
-                ctx.fillText("😈", cx, cy + 2);
+                ctx.fillText('👑', cx, cy + 2);
             } else {
                 ctx.fillText(lvl.id, cx, cy + 2);
             }
 
-            // 4. 绘制星星 (皇冠效果)
-            let stars = this.state.stars[lvl.id] || 0;
+            // 4) 星星
+            const stars = this.state.stars[lvl.id] || 0;
             if (stars > 0 && !isLocked) {
-                let starStr = "⭐".repeat(stars);
+                const starStr = '⭐'.repeat(stars);
                 ctx.font = "14px 'Varela Round', Arial";
-                ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
                 ctx.shadowBlur = 4;
                 ctx.fillText(starStr, cx, cy - r - 10);
                 ctx.shadowBlur = 0;
             }
 
-            // 5. 当前关卡指示箭头 (跳动)
+            // 5) 当前关卡指示
             if (isCurrent) {
-                let bounce = Math.abs(Math.sin(this.time * 2)) * 10;
-                ctx.fillStyle = this.style.nodeActive; // 使用章节主题色
+                const bounce = Math.abs(Math.sin(this.time * 2)) * 10;
+                ctx.fillStyle = this.style.nodeActive;
                 ctx.font = "24px 'Varela Round', Arial";
-                ctx.fillText("▼", cx, cy - r - 20 - bounce);
+                ctx.fillText('⬇', cx, cy - r - 20 - bounce);
             }
+
+            const clickPadding = lvl.mapConfig.icon === 'boss' ? 24 : 20;
+            this.nodeRenderCache.push({
+                id: lvl.id,
+                cx,
+                cy,
+                hitRadius: baseR + clickPadding,
+                unlocked: lvl.id <= maxUnlockedLevel
+            });
         });
     }
 
-    // 🔄 绘制章节切换按钮
+    // 章节切换按钮
     drawChapterButtons(ctx, w, h) {
         const buttonY = h - 50; // 底部位置
         
@@ -330,11 +389,6 @@ export class MapRenderer {
         ctx.restore();
     }
 
-    // 🌸 筛选当前章节的关卡
-    getCurrentChapterLevels() {
-        return this.levels.filter(level => level.chapter === this.currentChapter);
-    }
-
     // 🔄 点击检测 - 章节按钮
     getClickedChapterButton(x, y) {
         // 检测上一章按钮
@@ -370,10 +424,12 @@ export class MapRenderer {
     setupEvents() {
         this.canvas.addEventListener('click', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            
-            // 🌸 简化的坐标计算（修复高分辨率屏幕问题）
-            const mouseX = e.clientX - rect.left; 
-            const mouseY = e.clientY - rect.top;
+
+            // 统一映射到逻辑坐标，修复缩放场景下的命中偏移
+            const scaleX = rect.width > 0 ? (this.width / rect.width) : 1;
+            const scaleY = rect.height > 0 ? (this.height / rect.height) : 1;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
 
             // 1. 优先检测章节按钮点击
             const chapterBtn = this.getClickedChapterButton(mouseX, mouseY);
@@ -383,22 +439,20 @@ export class MapRenderer {
                 }
             }
             
-            const w = this.width;
-            const h = this.height;
-            const getY = (percent) => h - (percent * h * 0.9) - (h * 0.05);
-
             // 2. 检测关卡节点点击（只检测当前章节）
-            const chapterLevels = this.getCurrentChapterLevels();
-            for (let lvl of chapterLevels) {
-                let cx = lvl.mapConfig.x * w;
-                let cy = getY(lvl.mapConfig.y);
-                let dist = Math.sqrt(Math.pow(mouseX - cx, 2) + Math.pow(mouseY - cy, 2));
-                
-                if (dist < 40 && lvl.id <= this.state.maxLevel) {
-                    this.onNodeClick(lvl.id);
+            for (const node of this.nodeRenderCache) {
+                if (!node.unlocked) continue;
+
+                const dx = mouseX - node.cx;
+                const dy = mouseY - node.cy;
+                const distSq = dx * dx + dy * dy;
+
+                if (distSq <= node.hitRadius * node.hitRadius) {
+                    this.onNodeClick(node.id);
                     return; // 只处理第一个匹配的关卡
                 }
             }
         });
     }
 }
+

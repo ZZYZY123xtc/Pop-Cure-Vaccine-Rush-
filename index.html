@@ -2,62 +2,73 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>防控隔离 - 可爱版</title>
-    <!-- 引入 ZCOOL KuaiLe (快乐体)，这是一款非常可爱的中文手写字体 -->
-    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>萌菌研究所 - 培养皿守护战</title>
+    
+    <!-- 🚀 性能优化：预连接Google Fonts，减少延迟 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- 🎨 可选字体：加载失败不影响游戏运行 -->
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 🎯 开始界面 - 移到最外层，确保不被遮挡 -->
-    <div id="start-screen" style="display: flex; z-index: 10000; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #FFF9F0; opacity: 1;">
-        <div class="tutorial-card">
-            <div class="logo-area">🔬</div>
-            <h1>萌菌研究所</h1>
-            <p class="subtitle">实习研究员，欢迎入职！</p>
-            
-            <div class="rules-container">
-                <div class="rule-item">
-                    <span class="icon">👆</span>
-                    <div class="text">
-                        <h3>点击消除</h3>
-                        <p>点击果冻病毒来收集数据</p>
+    <!-- 🎯 Stage 容器：所有层的统一参照系 -->
+    <div id="stage">
+        
+        <!-- ============================================================
+             开始屏幕层
+             ============================================================ -->
+        <div id="start-layer" class="stage-layer">
+            <div class="tutorial-card">
+                <div class="logo-area">🔬</div>
+                <h1>萌菌研究所</h1>
+                <p class="subtitle">实习研究员，欢迎入职！</p>
+                
+                <div class="rules-container">
+                    <div class="rule-item">
+                        <span class="icon">👆</span>
+                        <div class="text">
+                            <h3>点击消除</h3>
+                            <p>点击果冻病毒来收集数据</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <span class="icon">🧪</span>
+                        <div class="text">
+                            <h3>充满治愈条</h3>
+                            <p>顶部进度条满 <span class="highlight">100%</span> 即可过关</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <span class="icon">⚠️</span>
+                        <div class="text">
+                            <h3>小心感染</h3>
+                            <p>底部感染条满了就会 <span class="danger">任务失败</span></p>
+                        </div>
                     </div>
                 </div>
-                <div class="rule-item">
-                    <span class="icon">🧪</span>
-                    <div class="text">
-                        <h3>充满治愈条</h3>
-                        <p>顶部进度条满 <span class="highlight">100%</span> 即可过关</p>
-                    </div>
-                </div>
-                <div class="rule-item">
-                    <span class="icon">⚠️</span>
-                    <div class="text">
-                        <h3>小心感染</h3>
-                        <p>底部感染条满了就会 <span class="danger">任务失败</span></p>
-                    </div>
-                </div>
+                <button id="start-btn">开始实验</button>
             </div>
-            <button id="start-btn">开始实验</button>
         </div>
-    </div>
-
-    <!-- 地图场景 (初始隐藏，动画后显示) -->
-    <div id="map-layer" style="display:none">
-        <canvas id="map-canvas"></canvas>
-        <div id="energy-bar">
-            <span class="icon">⚡</span>
-            <span id="energy-text">30/30</span>
+        
+        <!-- ============================================================
+             地图层
+             ============================================================ -->
+        <div id="map-layer" class="stage-layer hidden">
+            <canvas id="map-canvas"></canvas>
+            <div id="energy-bar">
+                <span class="icon">⚡</span>
+                <span id="energy-text">30/30</span>
+            </div>
         </div>
-    </div>
-
-    <!-- 游戏场景容器 (包含开始屏幕和战斗UI) -->
-    <div id="game-layer">
-        <div id="game-container">
-        <!-- 开场剧情动画（生物扫描仪风格） -->
-        <div id="story-screen" class="hidden">
-            <!-- 动态背景 Canvas -->
+        
+        <!-- ============================================================
+             故事层
+             ============================================================ -->
+        <div id="story-layer" class="stage-layer hidden">
             <canvas id="story-canvas"></canvas>
             
             <!-- 浮动对话框 -->
@@ -74,56 +85,88 @@
                 </div>
             </div>
         </div>
+        
+        <!-- ============================================================
+             游戏层
+             ============================================================ -->
+        <div id="game-layer" class="stage-layer hidden">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        
+        <!-- ============================================================
+             UI 层（游戏 HUD）
+             ============================================================ -->
+        <div id="ui-layer" class="stage-layer hidden">
+            <div id="game-container">
+                <div id="ui-header">
+                    <div class="header-left">
+                        <div class="level-display">
+                            <span id="level-display-header">Level 1</span> / <span id="total-levels-header">5</span>
+                        </div>
+                        <!-- 被动技能显示区域 -->
+                        <div id="passive-skill-area" class="hidden">
+                            <div class="combo-display">
+                                <span class="lightning-icon">⚡</span>
+                                <span class="combo-text">Combo: <span id="combo-count">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-center">
+                        <h1 id="game-title">培养皿守护战</h1>
+                    </div>
+                    <div class="header-right">
+                        <button id="audio-toggle-btn" class="icon-btn" title="静音" aria-label="静音切换" aria-pressed="false">🎵</button>
+                        <button id="pause-btn" class="icon-btn" title="游戏设置">⚙️</button>
+                    </div>
+                    <div class="progress-box" id="vaccine-progress">
+                        <div class="progress-label">疫苗研发进度</div>
+                        <div class="progress-bar-wrapper">
+                            <div id="cure-bar-header" class="progress-bar cure"></div>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Header 区域 (15vh) -->
-        <div id="ui-header">
-            <div class="header-left">
-                <span id="level-display-header">Level 1</span> / <span id="total-levels-header">5</span>
-                <!-- 被动技能显示区域 -->
-                <div id="passive-skill-area" class="hidden">
-                    <div class="combo-display">
-                        <span class="lightning-icon">⚡</span>
-                        <span class="combo-text">Combo: <span id="combo-count">0</span></span>
+                <!-- 技能区 (右下角，默认隐藏) -->
+                <div id="skill-container" class="hidden">
+                    <div id="active-skill-btn" class="skill-btn locked hidden">
+                        <div class="skill-icon">❄️</div>
+                        <div class="cooldown-overlay"></div>
+                        <!-- 🔥 数字移到skill-btn的直接子元素，不受overlay高度限制 -->
+                        <span class="cd-number"></span>
+                        <div class="key-hint">极寒</div>
+                    </div>
+                </div>
+
+                <!-- Footer 区域 (10vh) -->
+                <div id="ui-footer">
+                    <div class="progress-box">
+                        <div class="progress-label">免疫系统负荷</div>
+                        <div class="progress-bar-wrapper">
+                            <div id="infection-bar-footer" class="progress-bar infection"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="header-center">
-                <h1 id="game-title">防控隔离</h1>
-            </div>
-            <div class="progress-box" id="vaccine-progress">
-                <div class="progress-label">疫苗研发进度</div>
-                <div class="progress-bar-wrapper">
-                    <div id="cure-bar-header" class="progress-bar cure"></div>
-                </div>
+        </div>
+        
+        <!-- ============================================================
+             模态框层
+             ============================================================ -->
+        <div id="modal-layer" class="stage-layer">
+        <!-- 第25关：奶油浮窗（确认后开战） -->
+        <div id="final-boss-briefing" class="modal-overlay hidden">
+            <div class="final-boss-briefing-card">
+                <h2>[第25关：终焉主脑 · 奶油坍塌]</h2>
+
+                <p>🍦 点击剥落奶油壳，残渣飞出时必须拦截！</p>
+                <p>⚠️ 残渣逃逸 <span class="gold-number">1</span> 个，免疫负荷 <span class="gold-number">+5</span>（满 <span class="gold-number">100</span> 失败）。</p>
+                <p>✨ 奶油球 &lt; <span class="gold-number">15</span> 后停止喷发，专心拆迁。</p>
+                <p>👑 奶油球 &lt; <span class="gold-number">5</span> 暴露核心，<span class="gold-number">10秒</span>内疯狂连点 <span class="gold-number">100</span> 下！</p>
+
+                <button id="final-boss-briefing-btn">开启圣战</button>
             </div>
         </div>
 
-        <!-- 游戏画布 -->
-        <canvas id="gameCanvas"></canvas>
-
-        <!-- 技能区 (右下角，默认隐藏) -->
-        <div id="skill-container" class="hidden">
-            <!-- 这是一个 MOBA 风格的技能按钮 -->
-            <div id="active-skill-btn" class="skill-btn locked hidden">
-                <div class="skill-icon">❄️</div>
-                <div class="cooldown-overlay">
-                    <span class="cd-number"></span>
-                </div>
-                <div class="key-hint">极寒</div>
-            </div>
-        </div>
-
-        <!-- Footer 区域 (10vh) -->
-        <div id="ui-footer">
-            <div class="progress-box">
-                <div class="progress-label">免疫系统负荷</div>
-                <div class="progress-bar-wrapper">
-                    <div id="infection-bar-footer" class="progress-bar infection"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 结束弹窗 -->
         <div id="game-over" class="hidden">
             <div class="modal-content">
                 <h2>防守失败!</h2>
@@ -150,6 +193,16 @@
                 <h2>防守成功!</h2>
                 <p>成功清除所有危险病毒!</p>
                 <button onclick="location.reload()">下一关</button>
+            </div>
+        </div>
+        
+        <!-- 游戏设置菜单弹窗 -->
+        <div id="pause-menu" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>⚙️ 游戏设置</h2>
+                <p>选择继续战斗或返回地图重新规划</p>
+                <button id="resume-game-btn" class="primary-btn">继续游戏</button>
+                <button id="pause-back-to-map-btn" class="secondary-btn">返回地图</button>
             </div>
         </div>
 
@@ -240,6 +293,15 @@
             </div>
         </div>
 
+        <!-- 🧪 Toast提示系统（萌萌的关卡提示） -->
+        <div id="level-tip-toast" class="level-tip-toast hidden">
+            <div class="toast-icon">🧪</div>
+            <div class="toast-content">
+                <div class="toast-title" id="toast-title">提示标题</div>
+                <div class="toast-text" id="toast-text">提示内容</div>
+            </div>
+        </div>
+
         <!-- 教学引导气泡系统（内容由 JS 动态填充） -->
         <div id="tutorial-overlay" class="hidden">
             <!-- 步骤 1 -->
@@ -283,17 +345,55 @@
             </div>
         </div>
         </div>
-    </div>
+        
+    </div> <!-- #stage 结束 -->
 
     <script type="module">
         // 导入核心模块
         import { startGame, init } from './js/core/game.js';
         import { SceneManager } from './js/managers/scene-manager.js';
+        import { viewportManager, setCanvasSizeUpdateCallback } from './js/systems/viewport-manager.js';
+        import { layerManager } from './js/systems/layer-manager.js';
+        import { markCanvasSizeNeedsUpdate } from './js/systems/game-loop.js';
 
         console.log('[INIT] 开始初始化游戏...');
+        
+        // ✅ 设置性能优化回调：通知游戏循环更新缓存
+        setCanvasSizeUpdateCallback(markCanvasSizeNeedsUpdate);
+        
+        // 🎯 初始化 ViewportManager 并注册所有 Canvas
+        window.viewportManager = viewportManager;
+        window.layerManager = layerManager;
+        
+        // 注册地图 Canvas
+        viewportManager.registerCanvas('map-canvas', (width, height, dpr) => {
+            console.log(`[ViewportManager] 地图 Canvas 已调整: ${width}x${height} (DPR: ${dpr})`);
+            // 地图渲染器会监听这个回调并重新绘制
+            if (window.sceneManager && window.sceneManager.mapRenderer) {
+                window.sceneManager.mapRenderer.resize(width, height, dpr);
+            }
+        });
+        
+        // 注册游戏 Canvas（只使用75%的viewport高度，留出header和footer）
+        viewportManager.registerCanvas('gameCanvas', (width, height, dpr) => {
+            console.log(`[ViewportManager] 游戏 Canvas 已调整: ${width}x${height} (DPR: ${dpr})`);
+            // ✅ ViewportManager 已自动设置 canvas.width/height 和 DPR 缩放
+            // 游戏渲染由 game-loop 持续进行，无需额外操作
+        }, { heightFactor: 0.75 });  // ✅ 只使用75%的viewport高度
+        
+        // 注册故事 Canvas
+        viewportManager.registerCanvas('story-canvas', (width, height, dpr) => {
+            console.log(`[ViewportManager] 故事 Canvas 已调整: ${width}x${height} (DPR: ${dpr})`);
+            // ✅ ViewportManager 已自动设置 canvas.width/height 和 DPR 缩放
+            // 故事场景渲染由其自己的循环处理
+        });
+        
+        console.log('[ViewportManager] 所有 Canvas 已注册');
+        
+        // 🎯 初始化层显示状态
+        layerManager.goToStart();  // 显示开始屏幕
 
         // 初始化游戏（设置事件监听、UI 初始化）
-        // 这时还不应该初始化 SceneManager，因为我们先要显示开始屏幕
         try {
             init();
             console.log('[INIT] 游戏壳初始化成功');
@@ -314,6 +414,10 @@
 
         window.addEventListener('startButtonClicked', () => {
             console.log('[EVENT] startButtonClicked 触发（开场动画已完成）');
+            
+            // 切换到地图层
+            layerManager.goToMap();
+            
             if (!sceneManagerInitialized) {
                 try {
                     console.log('[SCENE] 初始化场景管理器...');

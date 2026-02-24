@@ -1,5 +1,6 @@
 ﻿/* ===== CSS 模块导入聚合器 ===== */
 /* 所有样式已拆分到 css/ 目录中的模块文件 */
+@import './css/stage.css';      /* 🎯 统一 Stage 架构 */
 @import './css/base.css';
 @import './css/layout.css';
 @import './css/components.css';

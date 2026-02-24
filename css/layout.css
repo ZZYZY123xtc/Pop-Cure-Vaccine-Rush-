@@ -1,7 +1,8 @@
 /* layout.css - 页面布局与屏幕级容器 */
-#ui-layer {
+/* ✅ UI 层可见性由 LayerManager 的 .hidden 类管理，不在这里设置 */
+/* #ui-layer {
     display: none;
-}
+} */
 
 #ui-header {
     position: relative;
@@ -14,6 +15,15 @@
     justify-content: space-around;
     padding: 0 30px;
     box-sizing: border-box;
+    pointer-events: auto;  /* ✅ UI元素允许点击 */
+}
+
+/* 确保UI header内的所有交互元素都可以点击 */
+#ui-header button,
+#ui-header .icon-btn {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 100;
 }
 
 #ui-footer {
@@ -27,6 +37,8 @@
     justify-content: center;
     padding: 0 30px;
     box-sizing: border-box;
+    pointer-events: auto;  /* ✅ UI元素允许点击 */
+    margin-top: auto;  /* ✅ 推到flex容器底部 */
 }
 
 .header-left {
@@ -39,9 +51,53 @@
     gap: 10px;
 }
 
+.level-display {
+    white-space: nowrap;  /* ✅ 防止换行 */
+    font-size: 18px;
+}
+
 .header-center {
     flex: 1;
     text-align: center;
+}
+
+.header-right {
+    min-width: 100px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto; /* ⚙️ 确保容器内元素可点击 */
+    position: relative;
+    z-index: 50; /* 确保在合适的层级 */
+}
+
+.icon-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFB6C1 0%, #FF9AA2 100%);
+    border: 2px solid #fff;
+    box-shadow: 0 4px 12px rgba(255, 154, 162, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: all 0.2s ease;
+    user-select: none;
+    pointer-events: auto; /* ⚙️ 确保按钮可以点击 */
+    position: relative; /* 确保按钮在z-index层级中正常显示 */
+    z-index: 100; /* 提高层级，避免被遮挡 */
+}
+
+.icon-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(255, 154, 162, 0.4);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
 }
 
 #game-title {
@@ -89,6 +145,23 @@
 .progress-bar.infection {
     background: linear-gradient(90deg, #FF6B6B 0%, #FF8B8B 100%);
     box-shadow: 0 0 10px rgba(255, 107, 107, 0.4);
+}
+
+.progress-bar.infection.final-boss-load {
+    background: linear-gradient(90deg, #FF8B8B 0%, #FFD700 100%);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.5), 0 0 16px rgba(255, 215, 0, 0.35);
+    animation: finalBossLoadPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes finalBossLoadPulse {
+    0%, 100% {
+        filter: brightness(1);
+        transform: scaleY(1);
+    }
+    50% {
+        filter: brightness(1.15);
+        transform: scaleY(1.03);
+    }
 }
 
 /* 开始屏幕 */

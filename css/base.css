@@ -4,7 +4,8 @@ body {
     overflow: hidden;
     background-color: #FFF9F0; 
     color: #555;
-    font-family: 'ZCOOL KuaiLe', 'Yuanti SC', 'YouYuan', cursive, sans-serif;
+    /* 🎨 萌萌字体优先：ZCOOL KuaiLe（站酷快乐体）作为首选，系统字体作为回退 */
+    font-family: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', cursive, sans-serif;
     height: 100vh;
     user-select: none;
 }
@@ -21,15 +22,20 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    /* 关键：UI容器本身不拦截点击，避免挡住底层 gameCanvas */
+    pointer-events: none;
 }
 
 canvas {
     display: block;
-    background-color: transparent; 
+    background-color: transparent;
+    /* ✅ 游戏 Canvas 只占据中间 75vh，留出 header(15vh) + footer(10vh) = 25vh */
     width: 100%;
     height: 75vh;
     cursor: pointer;
     flex-shrink: 0;
+    pointer-events: auto; /* ⚙️ Canvas响应点击事件 */
+    position: relative; /* 确保在正常文档流中 */
 }
 
 #intro-canvas {

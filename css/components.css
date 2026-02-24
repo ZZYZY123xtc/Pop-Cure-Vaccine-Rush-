@@ -45,6 +45,7 @@
     bottom: 30px;
     right: 30px;
     z-index: 50;
+    pointer-events: auto;  /* ✅ 允许点击技能按钮 */
 }
 
 #skill-container.hidden {
@@ -106,17 +107,33 @@
     font-size: 20px;
     font-weight: bold;
     transition: height 0.1s linear;
-    overflow: hidden;
+    overflow: hidden; /* 🔥 改回hidden，因为数字已经移出overlay */
+    z-index: 10;
 }
 
 .cooldown-overlay .cd-number {
+    /* 🔥 此类保留但不再使用，数字已移到skill-btn直接子元素 */
+    display: none;
+}
+
+/* 🔥 新增：将数字放到skill-btn的直接子元素，不受overlay高度限制 */
+.skill-btn > .cd-number {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 24px;
+    font-size: 32px;
     color: #fff;
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 15px rgba(0, 0, 0, 1), 0 0 5px rgba(0, 0, 0, 0.8);
+    font-weight: bold;
+    z-index: 30; /* 🔥 在overlay之上 */
+    pointer-events: none; /* 🔥 不阻挡点击 */
+    opacity: 0; /* 🔥 默认隐藏 */
+    transition: opacity 0.2s;
+}
+
+.skill-btn.cooldown > .cd-number {
+    opacity: 1; /* 🔥 CD期间显示 */
 }
 
 .skill-btn.cooldown {

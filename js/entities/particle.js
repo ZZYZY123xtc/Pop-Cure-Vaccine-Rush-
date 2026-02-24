@@ -17,15 +17,17 @@ export class Particle {
         this.text = null; // 文字内容
     }
 
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
+    update(dt = 16.67) {
+        // ✅ 基于时间的平滑移动
+        const frameNormalization = dt / 16.67;
+        this.x += this.vx * frameNormalization;
+        this.y += this.vy * frameNormalization;
         
         // 增加一点空气阻力，让爆炸更有质感
         this.vx *= 0.95;
         this.vy *= 0.95;
         
-        this.life -= this.decay;
+        this.life -= this.decay * frameNormalization;
         if (!this.text) this.size *= 0.95; // 普通粒子慢慢变小，文字粒子不变小
     }
 

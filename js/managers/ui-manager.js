@@ -3,6 +3,7 @@
  */
 import { Virus } from '../entities/virus.js';
 import { modals } from '../ui/modals-ui.js';
+import { PERFORMANCE_CONFIG, perfLog } from '../core/performance-config.js';
 
 export class UIManager {
     constructor() {
@@ -20,9 +21,14 @@ export class UIManager {
         this.comboCountEl = document.getElementById('combo-count');
         this.activeSkillBtn = document.getElementById('active-skill-btn');
         this.cooldownOverlay = this.activeSkillBtn ? this.activeSkillBtn.querySelector('.cooldown-overlay') : null;
-        this.cdNumber = this.cooldownOverlay ? this.cooldownOverlay.querySelector('.cd-number') : null;
+        this.cdNumber = this.activeSkillBtn ? this.activeSkillBtn.querySelector('.cd-number') : null; // 🔥 现在是skill-btn的直接子元素
         
-        // 图鉴弹窗元素
+        // 🔥 内部状态追踪
+        this._lastLoggedCD = -1; // 用于减少日志频率
+        this._lastDisplayTime = -1; // 🔥 性能优化：缓存上次显示的时间，避免每帧修改DOM
+        this._lastCDPercent = -1; // 🔥 缓存上次的CD百分比
+        
+        // 后面是图鉴弹窗元素
         this.introModal = document.getElementById('intro-modal');
         this.introCanvas = document.getElementById('intro-canvas');
         this.introName = document.getElementById('intro-name');
@@ -41,6 +47,18 @@ export class UIManager {
         this.unlockSkillDesc = document.getElementById('unlock-skill-desc');
         this.equipSkillBtn = document.getElementById('equip-skill-btn');
         
+        // 暂停菜单元素
+        this.pauseMenu = document.getElementById('pause-menu');
+        this.resumeGameBtn = document.getElementById('resume-game-btn');
+        this.pauseBackToMapBtn = document.getElementById('pause-back-to-map-btn');
+
+        // 第25关奶油浮窗
+        this.finalBossBriefing = document.getElementById('final-boss-briefing');
+        this.finalBossBriefingBtn = document.getElementById('final-boss-briefing-btn');
+        
+        // 关卡标题元素
+        this.gameTitle = document.getElementById('game-title');
+        
         // 技能演示画布由 ModalsUI 管理（不在 UIManager 中保存 DOM 引用）
     }
 
@@ -55,10 +73,39 @@ export class UIManager {
         this.infectionBarFooter.style.width = infectionPercent + '%';
     }
 
+    setFinalBossLoadEffect(enabled) {
+        if (!this.infectionBarFooter) return;
+
+        if (enabled) {
+            this.infectionBarFooter.classList.add('final-boss-load');
+        } else {
+            this.infectionBarFooter.classList.remove('final-boss-load');
+        }
+    }
+
     // 更新关卡显示
     updateLevelDisplay(levelIndex, totalLevels) {
         this.levelDisplayHeader.innerText = `Level ${levelIndex + 1}`;
         this.totalLevelsHeader.innerText = totalLevels;
+    }
+    
+    // 🎮 动态更新关卡标题（任务 3）
+    updateGameTitle(levelConfig) {
+        if (!this.gameTitle || !levelConfig) return;
+        
+        // 优先次：description > subtitle > 默认标题
+        let title = '培养皿守护战';
+        
+        if (levelConfig.description) {
+            // 提取 description 中的第一部分（" - "之前）
+            const parts = levelConfig.description.split(' - ');
+            title = parts[0] || title;
+        } else if (levelConfig.subtitle) {
+            title = levelConfig.subtitle;
+        }
+        
+        this.gameTitle.textContent = title;
+        console.log('[UI] 关卡标题已更新:', title);
     }
 
     // 更新技能UI显示
@@ -71,23 +118,23 @@ export class UIManager {
             return;
         }
         
-        // 🔥 修复：只要解锁了技能就显示，后续关卡也保留
-        // 被动技能（闪电）- 只要解锁就显示
-        const shouldShowLightning = skillManager.hasSkill('lightning');
+        // 🔥 修复：技能UI根据关卡索引显示（开发模式也遵循渐进解锁）
+        // 被动技能（闪电）- 第5关（0-based: index 4）开始显示
+        const shouldShowLightning = currentLevelIndex >= 4; // Level 5+
         if (shouldShowLightning) {
             this.passiveSkillArea.classList.remove('hidden');
-            console.log('[UI] ✅ 闪电技能UI已显示');
+            perfLog.log('[UI] ✅ 闪电技能UI已显示 (Level', currentLevelIndex + 1, ')');
         } else {
             this.passiveSkillArea.classList.add('hidden');
         }
         
-        // 主动技能（冰冻）- 只要解锁就显示
-        const shouldShowFreeze = skillManager.hasSkill('freeze');
+        // 主动技能（冰冻）- 第4关（0-based: index 3）开始显示
+        const shouldShowFreeze = currentLevelIndex >= 3; // Level 4+
         if (shouldShowFreeze) {
             this.skillContainer.classList.remove('hidden');
             this.activeSkillBtn.classList.remove('locked');
             this.activeSkillBtn.classList.remove('hidden');
-            console.log('[UI] ✅ 冰冻技能UI已显示');
+            perfLog.log('[UI] ✅ 冰冻技能UI已显示 (Level', currentLevelIndex + 1, ')');
         } else {
             // 技能未解锁时隐藏
             this.skillContainer.classList.add('hidden');
@@ -103,16 +150,93 @@ export class UIManager {
         }
     }
 
-    // 更新冷却UI
-    updateCooldownUI(freezeCooldown, maxCooldown) {
-        if (this.cooldownOverlay && this.cdNumber) {
-            const percent = (freezeCooldown / maxCooldown) * 100;
-            this.cooldownOverlay.style.height = percent + '%';
-            this.cdNumber.textContent = Math.ceil(freezeCooldown);
+    // 更新冷却UI（完全重构：明确区分三种状态）
+    updateCooldownUI(timeRemaining, maxTime, isFreezing = false) {
+        // 🔥 添加防御检查
+        if (!this.activeSkillBtn || !this.cooldownOverlay || !this.cdNumber) {
+            console.warn('[UI] updateCooldownUI: 技能UI元素不存在');
+            return;
         }
         
-        if (freezeCooldown === 0) {
-            this.activeSkillBtn.classList.remove('cooldown');
+        // ========== 状态1：冰冻释放中（5秒） ==========
+        if (isFreezing) {
+            // 添加 active-frost 类，移除 on-cd 和 cooldown 类
+            if (!this.activeSkillBtn.classList.contains('active-frost')) {
+                this.activeSkillBtn.classList.add('active-frost');
+            }
+            this.activeSkillBtn.classList.remove('on-cd', 'cooldown');
+            
+            // 强制隐藏遮罩层（冰冻期间不显示遮罩）
+            if (this.cooldownOverlay.style.height !== '0%') {
+                this.cooldownOverlay.style.height = '0%';
+            }
+            
+            // 🔥 性能优化：只有当数字变化时才更新DOM
+            const freezeTime = Math.ceil(timeRemaining);
+            if (freezeTime !== this._lastDisplayTime) {
+                this.cdNumber.textContent = freezeTime.toString();
+                this._lastDisplayTime = freezeTime;
+            }
+            
+            // 确保数字可见
+            if (this.cdNumber.style.opacity !== '1') {
+                this.cdNumber.style.opacity = '1';
+                this.cdNumber.style.visibility = 'visible';
+                this.cdNumber.style.display = 'block';
+            }
+            return;
+        }
+        
+        // ========== 状态2：CD冷却中（20秒） ==========
+        if (timeRemaining > 0) {
+            // 添加 on-cd 类，移除 active-frost 类
+            if (!this.activeSkillBtn.classList.contains('on-cd')) {
+                this.activeSkillBtn.classList.add('on-cd');
+            }
+            this.activeSkillBtn.classList.remove('active-frost');
+            
+            // 🔥 性能优化：遮罩按比例显示，但只在变化超过1%时更新
+            const percent = (timeRemaining / maxTime) * 100;
+            const percentInt = Math.floor(percent);
+            if (percentInt !== this._lastCDPercent) {
+                this.cooldownOverlay.style.height = percent + '%';
+                this._lastCDPercent = percentInt;
+            }
+            
+            // 🔥 性能优化：只有当数字变化时才更新DOM
+            const cdTime = Math.ceil(timeRemaining);
+            if (cdTime !== this._lastDisplayTime) {
+                this.cdNumber.textContent = cdTime.toString();
+                this._lastDisplayTime = cdTime;
+            }
+            
+            // 确保数字可见
+            if (this.cdNumber.style.opacity !== '1') {
+                this.cdNumber.style.opacity = '1';
+                this.cdNumber.style.visibility = 'visible';
+                this.cdNumber.style.display = 'block';
+            }
+            return;
+        }
+        
+        // ========== 状态3：技能就绪（0秒） ==========
+        // 移除所有状态类
+        if (this.activeSkillBtn.classList.contains('active-frost') || 
+            this.activeSkillBtn.classList.contains('on-cd') ||
+            this.activeSkillBtn.classList.contains('cooldown')) {
+            this.activeSkillBtn.classList.remove('active-frost', 'on-cd', 'cooldown');
+        }
+        
+        // 遮罩归零
+        if (this.cooldownOverlay.style.height !== '0%') {
+            this.cooldownOverlay.style.height = '0%';
+        }
+        
+        // 🔥 性能优化：清空数字时重置缓存
+        if (this.cdNumber.textContent !== '') {
+            this.cdNumber.textContent = '';
+            this._lastDisplayTime = -1;
+            this._lastCDPercent = -1;
         }
     }
 
@@ -136,8 +260,12 @@ export class UIManager {
         // 隐藏图鉴和技能解锁弹窗
         if (this.introModal) this.introModal.classList.add('hidden');
         if (this.skillUnlockModal) this.skillUnlockModal.classList.add('hidden');
+        if (this.finalBossBriefing) {
+            this.finalBossBriefing.classList.remove('visible');
+            this.finalBossBriefing.classList.add('hidden');
+        }
         
-        console.log('[UI] ✅ 已隐藏所有覆盖层和弹窗');
+        perfLog.debug('[UI] ✅ 已隐藏所有覆盖层和弹窗');
     }
     
     // 🔥 新增：完整的 UI 重置方法（关卡启动时用）
@@ -164,6 +292,7 @@ export class UIManager {
         }
         if (this.infectionBarFooter) {
             this.infectionBarFooter.style.width = '0%';
+            this.infectionBarFooter.classList.remove('final-boss-load');
         }
         
         console.log('[UI] ✅ UI 重置完毕');
@@ -254,11 +383,27 @@ export class UIManager {
         console.warn('Modals not available; skill unlock modal not shown');
     }
 
+    // 第25关：显示奶油浮窗
+    showFinalBossBriefing(onConfirm) {
+        if (!this.finalBossBriefing || !this.finalBossBriefingBtn) return;
+
+        this.finalBossBriefing.classList.remove('hidden');
+        this.finalBossBriefing.classList.add('visible');
+
+        this.finalBossBriefingBtn.onclick = () => {
+            this.finalBossBriefing.classList.remove('visible');
+            this.finalBossBriefing.classList.add('hidden');
+            if (typeof onConfirm === 'function') {
+                onConfirm();
+            }
+        };
+    }
+
     // 切换屏幕显示
 
 
     showStartScreen() {
-        console.log('[UI] 显示开始屏幕');
+        perfLog.debug('[UI] 显示开始屏幕');
         this.startScreen.classList.remove('hidden');
         this.startScreen.style.display = 'flex';
         this.startScreen.style.zIndex = '10000';
@@ -268,7 +413,7 @@ export class UIManager {
     }
     
     hideStartScreen() {
-        console.log('[UI] 隐藏开始屏幕');
+        perfLog.debug('[UI] 隐藏开始屏幕');
         this.startScreen.classList.add('hidden');
         this.startScreen.style.display = 'none';
         console.log('[UI] 开始屏幕已隐藏');
@@ -277,6 +422,24 @@ export class UIManager {
     hideLevelComplete() {
         this.levelCompleteScreen.classList.remove('visible');
         this.levelCompleteScreen.classList.add('hidden');
+    }
+    
+    // ⏸️ 显示暂停菜单（任务 1）
+    showPauseMenu() {
+        if (this.pauseMenu) {
+            this.pauseMenu.classList.remove('hidden');
+            this.pauseMenu.classList.add('visible');
+            console.log('[UI] 暂停菜单已显示');
+        }
+    }
+    
+    // ▶️ 隐藏暂停菜单（任务 1）
+    hidePauseMenu() {
+        if (this.pauseMenu) {
+            this.pauseMenu.classList.remove('visible');
+            this.pauseMenu.classList.add('hidden');
+            console.log('[UI] 暂停菜单已隐藏');
+        }
     }
 
     // 兼容方法：转发给 ModalsUI（保留以免外部直接调用失败）

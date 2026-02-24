@@ -1,5 +1,6 @@
 import { MapRenderer } from './map-renderer.js';
 import { LEVELS } from '../data/levels.js';
+import { audioManager } from './audio-manager.js';
 
 /**
  * 🎮 场景管理器：协调地图场景与战斗场景的切换
@@ -10,19 +11,15 @@ export class SceneManager {
         try {
             console.log('[SceneManager] ConstructorStart');
             
-            // 从 localStorage 读取玩家状态，如果没有则初始化
-            this.playerState = this.loadState() || {
-                maxLevel: 1,        // 最高解锁关卡
-                stars: {},          // 各关卡星数 {1: 2, 2: 3, ...}
-                energy: 30,         // 当前体力值
-                maxEnergy: 30,      // 最大体力值
+            // 🔥 开发模式：所有关卡解锁，无需存档
+            this.playerState = {
+                maxLevel: 999,      // 所有关卡解锁
+                stars: {},          // 各关卡星数
+                energy: 999,        // 无限体力
+                maxEnergy: 999,
                 lastRecoveryTime: Date.now()
             };
-            
-            // 🔥 开发模式：每次刷新页面时重置体力到满
-            this.playerState.energy = this.playerState.maxEnergy;
-            this.playerState.lastRecoveryTime = Date.now();
-            console.log('[SceneManager] PlayerState loaded');
+            console.log('[开发模式] 所有关卡已解锁');
 
             // 获取 DOM 元素
             this.mapLayer = document.getElementById('map-layer');
@@ -35,11 +32,8 @@ export class SceneManager {
             }
             console.log('[SceneManager] DOM elements found');
 
-            // 显示地图层（使用 .active 类）
-            console.log('[SceneManager] 显示地图层，隐藏游戏层');
-            this.mapLayer.classList.add('active');
-            this.gameLayer.style.display = 'none';
-            console.log('[SceneManager] 地图层已显示 (.active 类激活)>');
+            // ✅ 使用 LayerManager 统一管理层（不再直接操作 DOM）
+            console.log('[SceneManager] 初始化时不操作层，由 index.html 的 layerManager.goToMap() 处理');
 
             // 实例化地图渲染器
             console.log('[SceneManager] Creating MapRenderer...');
@@ -51,8 +45,17 @@ export class SceneManager {
             );
             console.log('[SceneManager] MapRenderer created');
 
-            // 🌸 设置初始章节（根据当前最高关卡）
-            this.updateMapChapter();
+            // 🔥 立即触发一次 Canvas 尺寸更新
+            // MapRenderer 创建时 width=0，需要从 ViewportManager 获取实际尺寸
+            if (window.viewportManager) {
+                const viewport = window.viewportManager.getViewport();
+                this.mapRenderer.resize(viewport.width, viewport.height, viewport.dpr);
+                console.log(`[SceneManager] MapRenderer 尺寸已初始化: ${viewport.width}x${viewport.height}`);
+            }
+
+            // 🌸 设置初始章节（开发模式固定为第一章）
+            console.log('[开发模式] 固定显示第一章');
+            this.mapRenderer.setChapter(1);
             console.log('[SceneManager] Initial chapter set');
 
             // 更新体力条显示
@@ -72,31 +75,11 @@ export class SceneManager {
     }
 
     /**
-     * 从 localStorage 加载玩家状态
-     */
-    loadState() {
-        const saved = localStorage.getItem('gameState');
-        return saved ? JSON.parse(saved) : null;
-    }
-
-    /**
-     * 保存玩家状态到 localStorage
-     */
-    saveState() {
-        localStorage.setItem('gameState', JSON.stringify(this.playerState));
-    }
-
-    /**
      * 地图节点被点击时的处理
      */
     onNodeClick(levelId) {
-        // 检查是否有足够体力
-        if (this.playerState.energy < 5) {
-            alert('⚠️ 体力不足！需要 5 点体力，当前仅有 ' + this.playerState.energy);
-            return;
-        }
-
-        // 进入该关卡
+        // 🔥 开发模式：直接开始游戏，无需体力检查
+        console.log(`[开始关卡] 关卡 ${levelId} - 开发模式`);
         this.enterLevel(levelId);
     }
 
@@ -105,26 +88,20 @@ export class SceneManager {
      * @param {number} levelId - 关卡ID
      */
     enterLevel(levelId) {
-        // 检查关卡是否解锁
-        if (levelId > this.playerState.maxLevel) {
-            alert('🔒 该关卡未解锁，请先完成前面的关卡！');
-            return;
+        // 🔥 开发模式：所有关卡均可进入，无需检查
+        console.log('[开发模式] 进入关卡', levelId);
+
+        // 🔥 开发模式：无需扣除体力
+        console.log('[SceneManager] 开发模式 - 直接开始游戏');
+
+        // ✅ 使用 LayerManager 切换层（会自动显示 UI 层）
+        console.log('[SceneManager] 切换到游戏层');
+        if (window.layerManager) {
+            window.layerManager.goToGame();
+            console.log('[SceneManager] ✅ 游戏层和 UI 层已显示');
+        } else {
+            console.error('[SceneManager] LayerManager 未初始化！');
         }
-
-        console.log('[SceneManager] 进入关卡', levelId);
-
-        // 扣除体力
-        this.playerState.energy -= 5;
-        this.saveState();
-        this.updateEnergyDisplay();
-        console.log('[SceneManager] 扣除体力，剩余:', this.playerState.energy);
-
-        // 隐藏地图层，显示游戏层
-        console.log('[SceneManager] 隐藏地图层，显示游戏层');
-        this.mapLayer.classList.remove('active');
-        this.gameLayer.style.display = 'block';
-        this.gameLayer.style.zIndex = '500';
-        console.log('[SceneManager] 游戏层已显示 (z-index: 500)');
 
         // 触发游戏开始（通知 game.js 加载该关卡）
         // ✅ 修复：将关卡ID转换为数组索引（levelId - 1）
@@ -140,13 +117,31 @@ export class SceneManager {
      */
     backToMap() {
         console.log('[SceneManager] 返回地图');
-        // 隐藏游戏层，显示地图层（使用 .active 类）
-        this.gameLayer.style.display = 'none';
-        this.mapLayer.classList.add('active');
-        console.log('[SceneManager] 地图层已显示 (.active 类激活)');
 
-        // 保存状态
-        this.saveState();
+        // 🔊 切回地图背景音乐
+        audioManager.playBGM('bgm_map', { fadeIn: 0.5, fadeOut: 0.5 });
+        
+        // 🔥 关键：暂停游戏状态，防止继续更新
+        if (window.gameManager) {
+            window.gameManager.endGame();
+            console.log('[SceneManager] ✅ 游戏状态已暂停');
+        }
+        
+        // 🔥 重置游戏循环标志，确保游戏层切换后不继续渲染
+        window.gameLoopStarted = false;
+        console.log('[SceneManager] ✅ 游戏循环标志已重置');
+        
+        // ✅ 使用 LayerManager 切换层（会自动隐藏 UI 层）
+        console.log('[SceneManager] 切换到地图层');
+        if (window.layerManager) {
+            window.layerManager.goToMap();
+            console.log('[SceneManager] ✅ 地图层已显示，UI 层已隐藏');
+        } else {
+            console.error('[SceneManager] LayerManager 未初始化！');
+        }
+
+        // 🔥 开发模式：无需保存状态
+        console.log('[开发模式] 返回地图');
 
         // 重新绘制地图（刷新节点状态）
         // mapRenderer 的 loop 会自动更新，因为 playerState 被改变了
@@ -168,8 +163,8 @@ export class SceneManager {
             this.playerState.maxLevel = levelId + 1;
         }
 
-        // 保存状态
-        this.saveState();
+        // 🔥 开发模式：无需保存进度
+        console.log(`[开发模式] 关卡 ${levelId} 完成，获得 ${starsEarned} 星`);
 
         // 🌸 检查是否需要切换章节
         this.updateMapChapter();
@@ -180,12 +175,16 @@ export class SceneManager {
 
     /**
      * 🌸 根据当前最高关卡，自动更新地图章节
+     * ⚠️ 仅在关卡完成后调用，防止新玩家自动跳转
      */
     updateMapChapter() {
         // 找到玩家当前最高关卡对应的章节
         const currentLevel = LEVELS.find(lvl => lvl.id === this.playerState.maxLevel);
         if (currentLevel && this.mapRenderer) {
             const targetChapter = currentLevel.chapter;
+            
+            // ⚠️ 保护逻辑：只有当前章节的所有关卡都解锁后，才允许跳转到下一章
+            // 新玩家（maxLevel = 1）应该显示第一章
             if (this.mapRenderer.currentChapter !== targetChapter) {
                 console.log(`[章节切换] 从第${this.mapRenderer.currentChapter}章切换到第${targetChapter}章`);
                 this.mapRenderer.setChapter(targetChapter);
@@ -233,44 +232,19 @@ export class SceneManager {
     }
 
     /**
-     * 体力恢复（简单版本）
-     * 每分钟恢复1点体力，最多30点
+     * 🔥 开发模式：体力恢复（禁用）
      */
     recoverEnergy() {
-        const now = Date.now();
-        const elapsed = now - this.playerState.lastRecoveryTime; // 毫秒
-        const minutesPassed = elapsed / 60000; // 转换为分钟
-        const pointsToRecover = Math.floor(minutesPassed);
-
-        if (pointsToRecover > 0) {
-            this.playerState.energy = Math.min(
-                this.playerState.maxEnergy,
-                this.playerState.energy + pointsToRecover
-            );
-            this.playerState.lastRecoveryTime = now;
-            this.saveState();
-            this.updateEnergyDisplay();
-        }
+        // 开发模式无需体力恢复
+        console.log('[开发模式] 体力恢复已禁用');
     }
 
     /**
-     * 更新体力条显示
+     * 🔥 开发模式：更新体力条显示（禁用）
      */
     updateEnergyDisplay() {
-        try {
-            const energyText = document.getElementById('energy-text');
-            if (energyText) {
-                energyText.textContent = `${this.playerState.energy}/${this.playerState.maxEnergy}`;
-                console.log('[Energy] 体力更新:', this.playerState.energy);
-            } else {
-                console.warn('[Energy] energy-text 元素找不到');
-            }
-
-            // 注意: 移除了不安全的 setInterval。体力恢复收会在下一个 Phase 幞现
-            // 当前仅保持 localStorage 永久性
-        } catch (err) {
-            console.error('[Energy ERROR]', err);
-        }
+        // 开发模式无需显示体力
+        console.log('[开发模式] 体力显示已禁用');
     }
 
     /**
@@ -281,22 +255,18 @@ export class SceneManager {
     }
 
     /**
-     * 外部改变关卡进度（测试用）
+     * 🔥 开发模式：外部改变关卡进度（测试用）
      */
     setMaxLevel(levelId) {
         this.playerState.maxLevel = levelId;
-        this.saveState();
         console.log('[Debug] 关卡进度设置为:', levelId);
     }
 
     /**
-     * 外部充满体力（测试用）
+     * 🔥 开发模式：外部充满体力（已禁用）
      */
     fullEnergy() {
-        this.playerState.energy = this.playerState.maxEnergy;
-        this.saveState();
-        this.updateEnergyDisplay();
-        console.log('[Debug] 体力充满:', this.playerState.energy);
+        console.log('[开发模式] 体力已无限，无需充满');
     }
 
     /**

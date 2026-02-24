@@ -6,7 +6,7 @@ import { STORY_DATA } from '../data/story.js';
 export class OpeningScene {
     constructor(onComplete) {
         this.onComplete = onComplete;
-        this.container = document.getElementById('story-screen');
+        this.container = document.getElementById('story-layer');
         this.canvas = document.getElementById('story-canvas');
         
         // 错误检查
@@ -65,9 +65,12 @@ export class OpeningScene {
     }
 
     createBubble() {
+        // ✅ 使用 canvas 逻辑尺寸而不是 window.innerWidth/Height
+        // 这样气泡范围和实际绘制区域匹配
+        const rect = this.canvas.getBoundingClientRect();
         return {
-            x: Math.random() * window.innerWidth,
-            y: window.innerHeight + Math.random() * 100,
+            x: Math.random() * rect.width,
+            y: rect.height + Math.random() * 100,
             r: Math.random() * 10 + 5,
             speed: Math.random() * 1 + 0.5,
             alpha: Math.random() * 0.5 + 0.1
@@ -81,37 +84,46 @@ export class OpeningScene {
             return;
         }
         
-        this.container.classList.remove('hidden');
-        this.resize();
-        window.addEventListener('resize', () => this.resize());
+        // ✅ 可见性由 LayerManager 控制，不在这里操作
+        // this.container.classList.remove('hidden');
+        // ✅ Canvas 尺寸由 ViewportManager 统一管理，不再手动 resize
+        // window.addEventListener('resize', () => this.resize());
         
         this.animateBackground();
         this.showSlide(0);
     }
 
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-    }
+    // ❌ 已废弃：Canvas 尺寸由 ViewportManager 管理
+    // resize() {
+    //     this.canvas.width = window.innerWidth;
+    //     this.canvas.height = window.innerHeight;
+    // }
 
     // --- 核心：动态背景绘制 ---
     animateBackground() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // ✅ 使用逻辑尺寸（CSS 尺寸），而不是物理像素
+        // ViewportManager 已经对 ctx 应用了 scale(dpr, dpr)
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = rect.width || parseFloat(this.canvas.style.width) || this.canvas.width / dpr;
+        const displayHeight = rect.height || parseFloat(this.canvas.style.height) || this.canvas.height / dpr;
+        
+        this.ctx.clearRect(0, 0, displayWidth, displayHeight);
         
         // 1. 渐变背景（模拟身体内部）
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, displayHeight);
         gradient.addColorStop(0, '#FFF0F5'); // 浅粉
         gradient.addColorStop(1, '#FFE4E1'); // 深粉
         this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, displayWidth, displayHeight);
 
         // 2. 绘制 DNA 气泡
         this.ctx.fillStyle = '#FFB7B2';
         this.bubbles.forEach(b => {
             b.y -= b.speed;
             if (b.y < -50) {
-                b.y = this.canvas.height + 50;
-                b.x = Math.random() * this.canvas.width; // 重新随机x位置
+                b.y = displayHeight + 50;
+                b.x = Math.random() * displayWidth; // 重新随机x位置
             }
             
             this.ctx.globalAlpha = b.alpha;
@@ -123,11 +135,11 @@ export class OpeningScene {
 
         // 3. 绘制科技感扫描线
         this.scanY += 2;
-        if (this.scanY > this.canvas.height) this.scanY = 0;
+        if (this.scanY > displayHeight) this.scanY = 0;
         
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.scanY);
-        this.ctx.lineTo(this.canvas.width, this.scanY);
+        this.ctx.lineTo(displayWidth, this.scanY);
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
         this.ctx.lineWidth = 3;
         this.ctx.stroke();
@@ -137,7 +149,7 @@ export class OpeningScene {
         scanGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
         scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
         this.ctx.fillStyle = scanGrad;
-        this.ctx.fillRect(0, this.scanY - 50, this.canvas.width, 50);
+        this.ctx.fillRect(0, this.scanY - 50, displayWidth, 50);
 
         this.animationId = requestAnimationFrame(() => this.animateBackground());
     }
@@ -196,7 +208,8 @@ export class OpeningScene {
 
     end() {
         cancelAnimationFrame(this.animationId);
-        this.container.classList.add('hidden');
+        // ✅ 可见性由 LayerManager 控制，不在这里操作
+        // this.container.classList.add('hidden');
         if (this.onComplete) this.onComplete();
     }
 }

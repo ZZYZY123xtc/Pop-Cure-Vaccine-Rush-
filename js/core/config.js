@@ -7,6 +7,9 @@ export const CONFIG = {
     SPAWN_INTERVAL: 1200,              // 1.2秒生成一个病毒
     INITIAL_SPAWN_COUNT: 3,            // 开局生成 3 个病毒
 
+    // 移动端触摸优化
+    TOUCH_PADDING: 25,                 // 触摸判定缓冲区（像素），解决"胖手指效应"
+
     // 难度曲线
     DIFFICULTY: {
         rampUpInterval: 8000,          // 每 8 秒增加一次难度

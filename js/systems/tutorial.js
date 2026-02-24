@@ -147,9 +147,13 @@ export class TutorialManager {
                 }
                 const canvasRect = canvas.getBoundingClientRect();
                 
-                // Canvas 的世界坐标 → 屏幕坐标
+                // ✅ Canvas 的世界坐标 → 屏幕坐标
+                // 病毒坐标是相对于 Canvas 的逻辑坐标
                 targetX = canvasRect.left + this.tutorialVirus.x;
                 targetY = canvasRect.top + this.tutorialVirus.y;
+                
+                // 💡 教程气泡默认在病毒下方，箭头指向上
+                placement = 'bottom';
                 
                 console.log('[Tutorial] 病毒坐标计算:', {
                     canvasLeft: canvasRect.left,
@@ -157,7 +161,8 @@ export class TutorialManager {
                     virusX: this.tutorialVirus.x,
                     virusY: this.tutorialVirus.y,
                     screenX: targetX,
-                    screenY: targetY
+                    screenY: targetY,
+                    placement
                 });
             }
         } else if (anchor.type === 'element') {
@@ -207,14 +212,27 @@ export class TutorialManager {
             console.log('[Tutorial] placement=bottom, 气泡在目标下方');
         }
         
-        // 边界检测：防止气泡超出屏幕
+        // 边界检测：防止气泡超出屏幕或挡住UI
         const margin = 20;
+        // 🔥 考虑UI header的高度（15vh，约 0.15 * window.innerHeight）
+        const uiHeaderHeight = window.innerHeight * 0.15;
+        const uiFooterHeight = window.innerHeight * 0.10;
+        
         let adjustedBubbleX = bubbleX;
         let adjustedBubbleY = bubbleY;
         
-        if (adjustedBubbleY < margin) adjustedBubbleY = margin;
-        if (adjustedBubbleY + bubbleHeight > window.innerHeight - margin) {
-            adjustedBubbleY = window.innerHeight - bubbleHeight - margin;
+        // 上边界：留出UI header的空间
+        const topBoundary = uiHeaderHeight + margin;
+        if (adjustedBubbleY < topBoundary) {
+            adjustedBubbleY = topBoundary;
+            console.log('[Tutorial] 气泡位置调整：避免遮挡顶部UI，新Y:', adjustedBubbleY);
+        }
+        
+        // 下边界：留出UI footer的空间
+        const bottomBoundary = window.innerHeight - uiFooterHeight - margin;
+        if (adjustedBubbleY + bubbleHeight > bottomBoundary) {
+            adjustedBubbleY = bottomBoundary - bubbleHeight;
+            console.log('[Tutorial] 气泡位置调整：避免遮挡底部UI，新Y:', adjustedBubbleY);
         }
         
         console.log('[Tutorial] 气泡最终位置:', {

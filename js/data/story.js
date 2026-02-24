@@ -28,7 +28,7 @@ export const TUTORIAL_STEPS = [
         text: "看！这里有一只不动的果冻病毒！",
         tip: "💡 快点击它来收集【核酸数据】！",
         anchor: { type: 'virus', target: 'tutorialVirus' },
-        placement: 'top',  // 气泡在病毒上方，箭头朝下
+        placement: 'bottom',  // ✅ 气泡在病毒下方，箭头指向上方病毒
         buttonText: "知道了"
     },
     {

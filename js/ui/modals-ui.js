@@ -273,16 +273,19 @@ export class ModalsUI {
         
         // 🚧 7. 边界修正
         const margin = 10;
+        // ✅ 考虑 UI 区域：header(15vh) + footer(10vh) = 25vh
+        const uiAreaHeight = window.innerHeight * 0.25;
+        const topBoundary = uiAreaHeight + margin;  // 上边界：不要进入UI区域
+        
         if (left < margin) left = margin;
         if (left + finalWidth > window.innerWidth - margin) {
             left = window.innerWidth - finalWidth - margin;
         }
 
-        // 🔥 关键修改在这里！
-        // 如果是第3步，跳过顶部的边界检查
-        // 否则它会被下一行代码强制推下来，再次挡住免疫条
-        if (!isStep3) {
-            if (top < margin) top = margin;
+        // ✅ 上边界：确保气泡不要在UI区域内
+        if (top < topBoundary) {
+            top = topBoundary;
+            console.log('[ModalsUI] 气泡位置调整：避免遮挡UI区域，新Y:', top);
         }
 
         if (top + finalHeight > window.innerHeight - margin) {

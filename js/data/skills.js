@@ -11,6 +11,7 @@ class SkillManager {
         // 冰冻状态
         this.isFrozen = false;
         this.freezeTimer = null;
+        this.freezeTimeRemaining = 0; // 🔥 新增：冰冻剩余时间（用于UI显示）
         
         // 连击系统
         this.comboCount = 0;
@@ -21,7 +22,12 @@ class SkillManager {
         this.lightningTargets = []; // 存储闪电击中的目标位置
         this.lightningOrigin = { x: 0, y: 0 }; // 闪电起点
         
-        // 🚫 禁用技能进度保存：每次刷新都清空已解锁技能
+        // � 开发模式：预解锁所有已设计的技能（与地图解锁同步）
+        this.unlockedSkills.add('freeze');      // 第4关解锁的冰冻技能
+        this.unlockedSkills.add('lightning');   // 第5关解锁的闪电技能
+        console.log('[开发模式] 技能预解锁: freeze, lightning');
+        
+        // �🚫 禁用技能进度保存：每次刷新都清空已解锁技能
         // this.loadProgress();
     }
     
@@ -90,11 +96,13 @@ class SkillManager {
         
         // 激活冰冻
         this.isFrozen = true;
+        this.freezeTimeRemaining = 5; // 🔥 新增：冰冻剩余时间（秒）
         console.log('❄️ 冰冻技能已激活！');
         
         // 5 秒后自动解除冰冻
         this.freezeTimer = setTimeout(() => {
             this.isFrozen = false;
+            this.freezeTimeRemaining = 0;
             console.log('❄️ 冰冻效果已结束');
             
             // 🔥 调用回调（在冰冻结束后才开始CD）
@@ -117,12 +125,14 @@ class SkillManager {
         this.lightningOrigin = { x, y };
         this.lightningTargets = targets;
         
+        console.log('[LIGHTNING] ⚡ 闪电技能已激活！绘制闪电链...');
+        
         // 清除旧的定时器
         if (this.lightningTimer) {
             clearTimeout(this.lightningTimer);
         }
         
-        // 300ms 后关闭特效
+        // 300ms 后关闭特效（非阻塞）
         this.lightningTimer = setTimeout(() => {
             this.lightningActive = false;
             this.lightningTargets = [];
